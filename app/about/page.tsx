@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { Metadata } from "next";
 import {
   Heart,
   ShieldCheck,
@@ -12,10 +13,21 @@ import {
   Globe,
 } from "lucide-react";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: `About ${siteConfig.name} — Free Forever Coding Education`,
   description:
     "Learn why CodeForge was built: zero paywalls, zero ads, in-browser WebAssembly runtimes, and accessible computer science education for everyone.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: `About ${siteConfig.name} — Free Forever Coding Education`,
+    description:
+      "Learn why CodeForge was built: zero paywalls, zero ads, in-browser WebAssembly runtimes, and accessible computer science education for everyone.",
+    url: `${siteConfig.url}/about`,
+    type: "website",
+    siteName: siteConfig.name,
+  },
 };
 
 export default function AboutPage() {
@@ -39,107 +51,80 @@ export default function AboutPage() {
       {/* The Core Mission */}
       <div className="rounded-3xl border border-surface-border bg-surface/50 p-6 sm:p-8 backdrop-blur-xl space-y-4 shadow-glow-card">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-forge-pink/20 border border-forge-pink/40 text-forge-pink">
-            <Heart className="w-5 h-5 fill-forge-pink" />
-          </div>
-          <h2 className="text-xl font-bold text-white">Built Free for Students</h2>
+          <Heart className="w-6 h-6 text-rose-500" />
+          <h2 className="text-xl font-bold text-white">The Manifesto</h2>
         </div>
-        <p className="text-sm text-gray-300 leading-relaxed">
-          Preparing for software engineering interviews shouldn&apos;t require expensive \$35/month
-          subscriptions, paywalled test cases, or watching intrusive ads. Many aspiring developers
-          worldwide cannot afford commercial coding platform fees or lack credit cards.
+        <p className="text-gray-300 leading-relaxed text-sm">
+          Technical interviews have become the standard gateway to software engineering careers. Yet,
+          aspiring developers often hit paywalls for basic practice, premium problem explanations, and
+          debugger access.
         </p>
-        <p className="text-sm text-gray-300 leading-relaxed">
-          {siteConfig.name} was built from first principles: utilize modern browser technologies
-          like <strong>WebAssembly (Pyodide)</strong> and <strong>sandboxed Web Workers</strong> to execute
-          and benchmark code completely on your local device. The result is zero server computing costs,
-          zero wait queues, and 100% free algorithmic prep for all.
+        <p className="text-gray-300 leading-relaxed text-sm">
+          CodeForge is built on the belief that coding practice tools should be free, open, and
+          infinitely accessible. We leverage cutting-edge browser technologies like WebAssembly,
+          Pyodide, Web Workers, and WebGL to deliver an interview-grade coding playground directly on
+          client devices.
         </p>
       </div>
 
-      {/* Engineering Architecture */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-white text-center sm:text-left">
-          How It Works Under the Hood
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-6 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
-            <div className="flex items-center gap-2.5 text-forge-cyan font-bold text-sm">
-              <Cpu className="w-4 h-4" />
-              <span>WebAssembly (Pyodide)</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Python 3.12 runs entirely inside your browser via WebAssembly compiled CPython. No
-              backend server is ever contacted to execute your Python code.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
-            <div className="flex items-center gap-2.5 text-forge-purple font-bold text-sm">
-              <Terminal className="w-4 h-4" />
-              <span>Sandboxed Web Workers</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              JavaScript runs off the main thread inside an isolated Worker with a hard 3-second
-              execution timeout guard that safely halts infinite loops without freezing the page.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
-            <div className="flex items-center gap-2.5 text-forge-green font-bold text-sm">
-              <ShieldCheck className="w-4 h-4" />
-              <span>100% Privacy &amp; LocalStorage</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              No account creation, no password vulnerabilities, and zero data tracking. Your solved
-              problems, activity streak, and code drafts remain on your device, with 1-click JSON backup.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
-            <div className="flex items-center gap-2.5 text-forge-pink font-bold text-sm">
-              <Layers className="w-4 h-4" />
-              <span>CodeMirror 6 Engine</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Selected over Monaco because it renders cleanly on mobile phones, integrates with
-              on-screen keyboards, and supports dedicated touch-friendly programming symbol toolbars.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Deploy Your Own Copy */}
-      <div className="rounded-3xl border border-forge-cyan/30 bg-gradient-to-b from-surface to-surface-secondary p-6 sm:p-8 backdrop-blur-xl space-y-4 shadow-neon-cyan">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Globe className="w-5 h-5 text-forge-cyan" />
-          <span>Deploy Your Own Copy in 60 Seconds</span>
+      {/* Architecture Highlights */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-white font-mono flex items-center gap-2">
+          <Layers className="w-5 h-5 text-forge-cyan" />
+          <span>Under the Hood Architecture</span>
         </h3>
-        <p className="text-sm text-gray-300 leading-relaxed">
-          {siteConfig.name} is designed to deploy on Vercel or any static host with{" "}
-          <strong>zero environment variables</strong>, <strong>zero database connections</strong>, and{" "}
-          <strong>zero paid accounts</strong>:
-        </p>
-        <div className="bg-background/80 border border-surface-border p-4 rounded-xl font-mono text-xs text-gray-300 space-y-1">
-          <div>$ git clone https://github.com/your-username/codeforge.git</div>
-          <div>$ cd codeforge</div>
-          <div>$ npm install</div>
-          <div>$ npm run build</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
+            <Cpu className="w-6 h-6 text-forge-cyan" />
+            <h4 className="text-sm font-bold text-white">Client-Side WASM &amp; Workers</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Code is executed safely in sandboxed WebAssembly (Pyodide 3.12) and Web Workers. No remote
+              cloud wait times, no queuing, and instant feedback.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
+            <ShieldCheck className="w-6 h-6 text-forge-green" />
+            <h4 className="text-sm font-bold text-white">Local-First Privacy</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Your submissions, draft codes, and progress heatmaps are persisted locally in your
+              browser&apos;s encrypted storage. No tracking, no mandatory signups.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
+            <Zap className="w-6 h-6 text-forge-amber" />
+            <h4 className="text-sm font-bold text-white">Free Multi-Language Cloud Runtimes</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              19 programming languages supported including C++, Java, Rust, Go, Python, and TypeScript
+              with zero setup and zero subscription fees.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
+            <Sparkles className="w-6 h-6 text-forge-magenta" />
+            <h4 className="text-sm font-bold text-white">Modern Aesthetic</h4>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Futuristic cyberpunk dark mode, glowing accents, 3D interactive graphics, and smooth
+              typography designed for focused algorithmic immersion.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-gray-400">
-          Push to GitHub and import the repository into Vercel — it will build and deploy instantly on the free hobby tier.
-        </p>
       </div>
 
-      {/* Bottom CTA */}
-      <div className="text-center pt-4">
+      {/* Zero Cost Guarantee */}
+      <div className="p-6 rounded-3xl border border-forge-cyan/30 bg-forge-cyan/5 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="space-y-1 text-center sm:text-left">
+          <h4 className="text-base font-bold text-white">Always Free. Zero Paywalls.</h4>
+          <p className="text-xs text-gray-400 max-w-md">
+            No credit card, no premium tiers, no locked questions. Start practicing instantly.
+          </p>
+        </div>
         <Link
           href="/problems"
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-background bg-forge-cyan shadow-neon-cyan hover:scale-105 active:scale-95 transition-all text-sm"
+          className="px-6 py-3 rounded-xl bg-forge-cyan text-background font-bold text-sm shadow-neon-cyan hover:scale-[1.02] transition-transform shrink-0"
         >
-          <Sparkles className="w-4 h-4" />
-          <span>Start Practicing Now</span>
+          Explore All Problems
         </Link>
       </div>
     </div>

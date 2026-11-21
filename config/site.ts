@@ -3,13 +3,13 @@ export const siteConfig = {
   tagline: "The Futuristic, Zero-Cost Coding Practice Platform",
   description:
     "Master algorithmic problem solving with interactive 3D visuals, instant in-browser code execution, and zero paid barriers. 100% free forever for students and engineers.",
-  url: "https://codeforge.dev",
+  url: "https://codeforge-eight-liart.vercel.app",
   author: {
-    name: "CodeForge Team",
-    github: "https://github.com",
+    name: "Aryan",
+    github: "https://github.com/AryanThakur979",
   },
   links: {
-    github: "https://github.com",
+    github: "https://github.com/AryanThakur979/codeforge",
     docs: "/about",
   },
   navItems: [
@@ -20,7 +20,7 @@ export const siteConfig = {
   ],
   stats: {
     problemsCount: "20+",
-    languagesSupported: "2 (JS & Python)",
+    languagesSupported: "19 Languages",
     cost: "100% Free",
     runtimeTarget: "0ms Backend Wait",
   },

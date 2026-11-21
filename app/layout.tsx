@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: `${siteConfig.name} — Free In-Browser Coding Practice & Interview Prep`,
     template: `%s | ${siteConfig.name}`,
@@ -17,10 +18,14 @@ export const metadata: Metadata = {
     "pyodide python in browser",
     "webassembly coding practice",
     "javascript code runner",
+    "c++ online judge",
     "data structures",
   ],
   authors: [{ name: siteConfig.author.name, url: siteConfig.author.github }],
   creator: siteConfig.author.name,
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -28,6 +33,14 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
+    images: [
+      {
+        url: "/favicon.svg",
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
