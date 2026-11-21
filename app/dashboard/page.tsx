@@ -156,10 +156,10 @@ export default function DashboardPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-purple/10 border border-forge-purple/30 text-forge-purple text-xs font-mono uppercase tracking-wider">
               Local Browser Profile • No Login Required
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Progress &amp; Performance
             </h1>
-            <p className="text-sm text-gray-400 max-w-xl">
+            <p className="text-sm text-slate-600 dark:text-gray-400 max-w-xl">
               All your coding submissions, streaks, and solved challenges are securely stored directly in your browser.
             </p>
           </div>
@@ -168,12 +168,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             {/* Streak Counter */}
             <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-surface/80 border border-surface-border backdrop-blur-md">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
                 <Flame className="w-5 h-5 animate-pulse" />
               </div>
               <div>
-                <div className="text-xs font-mono text-gray-400 uppercase">Day Streak</div>
-                <div className="text-xl font-bold font-mono text-white">
+                <div className="text-xs font-mono text-slate-500 dark:text-gray-400 uppercase">Day Streak</div>
+                <div className="text-xl font-bold font-mono text-slate-900 dark:text-white">
                   {streak} {streak === 1 ? "Day" : "Days"}
                 </div>
               </div>
@@ -185,8 +185,8 @@ export default function DashboardPage() {
                 <Trophy className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-xs font-mono text-gray-400 uppercase">Total Solved</div>
-                <div className="text-xl font-bold font-mono text-white">
+                <div className="text-xs font-mono text-slate-500 dark:text-gray-400 uppercase">Total Solved</div>
+                <div className="text-xl font-bold font-mono text-slate-900 dark:text-white">
                   {stats.totalSolved} / {stats.total}
                 </div>
               </div>
@@ -237,11 +237,11 @@ export default function DashboardPage() {
       <div className="rounded-2xl border border-surface-border bg-surface/30 p-6 backdrop-blur-md space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-forge-cyan" />
               <span>Data Portability &amp; Backup</span>
             </h3>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-slate-600 dark:text-gray-400">
               Export your solved challenges and code drafts as a portable JSON file, or restore progress to another machine.
             </p>
           </div>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={handleExport}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-surface-secondary border border-surface-border hover:border-forge-cyan/40 hover:text-forge-cyan transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-surface-secondary border border-surface-border text-slate-700 dark:text-gray-300 hover:border-forge-cyan/40 hover:text-forge-cyan transition-all"
             >
               <Download className="w-4 h-4" />
               <span>Export JSON</span>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-surface-secondary border border-surface-border hover:border-forge-purple/40 hover:text-forge-purple transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-surface-secondary border border-surface-border text-slate-700 dark:text-gray-300 hover:border-forge-purple/40 hover:text-forge-purple transition-all"
             >
               <Upload className="w-4 h-4" />
               <span>Import JSON</span>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Reset Data</span>

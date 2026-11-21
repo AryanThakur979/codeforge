@@ -63,10 +63,10 @@ export function FeaturesSection() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-purple/10 border border-forge-purple/30 text-forge-purple text-xs font-mono uppercase tracking-wider">
             Engineered For Speed &amp; Freedom
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Everything You Need to Ace Technical Interviews
           </h2>
-          <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
+          <p className="text-slate-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed">
             Built from first principles for students and self-taught engineers who want
             a lightning-fast, ad-free, completely gratis practice environment.
           </p>
@@ -88,10 +88,10 @@ export function FeaturesSection() {
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-surface-secondary border border-surface-border group-hover:border-forge-cyan/50 mb-5 transition-colors">
                   <Icon className="w-6 h-6 text-forge-cyan group-hover:scale-110 transition-transform" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-forge-cyan transition-colors">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-forge-cyan transition-colors">
                   {item.title}
                 </h3>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-slate-600 dark:text-gray-400 leading-relaxed">
                   {item.description}
                 </p>
               </motion.div>

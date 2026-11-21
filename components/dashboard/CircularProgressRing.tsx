@@ -25,8 +25,8 @@ export function CircularProgressRing({
 
   const colorStyles = {
     cyan: {
-      stroke: "#00F0FF",
-      glow: "rgba(0, 240, 255, 0.35)",
+      stroke: "var(--accent-cyan)",
+      glow: "rgba(2, 132, 199, 0.35)",
       text: "text-forge-cyan",
       bg: "bg-forge-cyan/10",
       border: "border-forge-cyan/30",
@@ -34,21 +34,21 @@ export function CircularProgressRing({
     emerald: {
       stroke: "#10B981",
       glow: "rgba(16, 185, 129, 0.35)",
-      text: "text-emerald-400",
+      text: "text-emerald-700 dark:text-emerald-400",
       bg: "bg-emerald-500/10",
       border: "border-emerald-500/30",
     },
     amber: {
       stroke: "#F59E0B",
       glow: "rgba(245, 158, 11, 0.35)",
-      text: "text-amber-400",
+      text: "text-amber-700 dark:text-amber-400",
       bg: "bg-amber-500/10",
       border: "border-amber-500/30",
     },
     rose: {
       stroke: "#F43F5E",
       glow: "rgba(244, 63, 94, 0.35)",
-      text: "text-rose-400",
+      text: "text-rose-700 dark:text-rose-400",
       bg: "bg-rose-500/10",
       border: "border-rose-500/30",
     },
@@ -66,7 +66,8 @@ export function CircularProgressRing({
             cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="rgba(255, 255, 255, 0.08)"
+            stroke="currentColor"
+            className="text-slate-200 dark:text-white/10"
             strokeWidth={strokeWidth}
           />
           {/* Animated active progress arc */}
@@ -88,8 +89,8 @@ export function CircularProgressRing({
 
         {/* Center Text Info */}
         <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
-          <span className="text-xl font-extrabold text-white">{solved}</span>
-          <span className="text-[10px] text-gray-400 -mt-0.5">/ {total}</span>
+          <span className="text-xl font-extrabold text-slate-900 dark:text-white">{solved}</span>
+          <span className="text-[10px] text-slate-500 dark:text-gray-400 -mt-0.5">/ {total}</span>
         </div>
       </div>
 
@@ -97,7 +98,7 @@ export function CircularProgressRing({
         <div className={`text-xs font-bold uppercase tracking-wider ${style.text}`}>
           {label}
         </div>
-        <div className="text-[11px] font-mono text-gray-400">{percentage}% Solved</div>
+        <div className="text-[11px] font-mono text-slate-600 dark:text-gray-400">{percentage}% Solved</div>
       </div>
     </div>
   );

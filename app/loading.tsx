@@ -7,7 +7,7 @@ export default function Loading() {
         </span>
         <div className="absolute inset-0 rounded-2xl border-2 border-forge-cyan/50 border-t-transparent animate-spin" />
       </div>
-      <div className="text-xs font-mono text-gray-400 tracking-wider uppercase animate-pulse">
+      <div className="text-xs font-mono text-slate-600 dark:text-gray-400 tracking-wider uppercase animate-pulse">
         Initializing Quantum Runtime...
       </div>
     </div>

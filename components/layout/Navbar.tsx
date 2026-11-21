@@ -16,16 +16,16 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-forge-purple/30 via-surface to-forge-cyan/20 border border-forge-cyan/30 shadow-neon-cyan group-hover:border-forge-cyan group-hover:scale-105 transition-all duration-300">
-            <Terminal className="w-5 h-5 text-forge-cyan group-hover:text-white transition-colors" />
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-forge-purple/20 via-surface to-forge-cyan/20 border border-forge-cyan/30 shadow-neon-cyan group-hover:border-forge-cyan group-hover:scale-105 transition-all duration-300">
+            <Terminal className="w-5 h-5 text-forge-cyan group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
             <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-forge-cyan to-forge-purple opacity-20 blur-sm group-hover:opacity-60 transition duration-300" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight text-white font-mono flex items-center gap-1">
+            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono flex items-center gap-1 transition-colors">
               {siteConfig.name}
               <span className="inline-block w-2 h-2 rounded-full bg-forge-cyan animate-pulse" />
             </span>
-            <span className="text-[10px] tracking-wider text-gray-400 font-mono uppercase -mt-1">
+            <span className="text-[10px] tracking-wider text-slate-500 dark:text-gray-400 font-mono uppercase -mt-1 transition-colors">
               Zero-Cost Coding
             </span>
           </div>
@@ -41,8 +41,8 @@ export function Navbar() {
                 href={item.href}
                 className={`relative px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? "text-forge-cyan bg-forge-cyan/10 border border-forge-cyan/30 shadow-sm"
-                    : "text-gray-300 hover:text-white hover:bg-surface-secondary/60"
+                    ? "text-forge-cyan bg-forge-cyan/15 border border-forge-cyan/30 shadow-sm font-semibold"
+                    : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                 }`}
               >
                 {item.label}
@@ -56,7 +56,7 @@ export function Navbar() {
           <ThemeToggle />
           <Link
             href="/problems"
-            className="relative inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-background bg-forge-cyan hover:bg-forge-cyan/90 transition-all shadow-neon-cyan hover:shadow-cyan-400/50 hover:scale-[1.02] active:scale-[0.98]"
+            className="relative inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white dark:text-slate-950 bg-forge-cyan hover:opacity-90 transition-all shadow-neon-cyan hover:scale-[1.02] active:scale-[0.98]"
           >
             <Sparkles className="w-4 h-4" />
             <span>Start Practice</span>
@@ -69,7 +69,7 @@ export function Navbar() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-2 rounded-lg border border-surface-border text-gray-300 hover:text-white hover:bg-surface-secondary transition-colors"
+            className="p-2 rounded-lg border border-surface-border text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white hover:bg-surface-secondary transition-colors"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 text-forge-cyan" />}
           </button>
@@ -89,7 +89,7 @@ export function Navbar() {
                 className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium ${
                   isActive
                     ? "text-forge-cyan bg-forge-cyan/15 border border-forge-cyan/30 font-semibold"
-                    : "text-gray-300 hover:text-white hover:bg-surface-secondary/60"
+                    : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                 }`}
               >
                 {item.label}
@@ -100,7 +100,7 @@ export function Navbar() {
             <Link
               href="/problems"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold text-background bg-forge-cyan shadow-neon-cyan"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-bold text-white dark:text-slate-950 bg-forge-cyan shadow-neon-cyan"
             >
               <Sparkles className="w-4 h-4" />
               <span>Start Practice Free</span>

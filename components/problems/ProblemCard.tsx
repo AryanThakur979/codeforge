@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, Code } from "lucide-react";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 import { Problem } from "@/types/problem";
 import { DifficultyBadge } from "./DifficultyBadge";
 
@@ -30,11 +30,11 @@ export function ProblemCard({ problem, isSolved, index }: ProblemCardProps) {
           {/* Solved Icon or Problem Number */}
           <div className="mt-0.5 shrink-0">
             {isSolved ? (
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="w-4 h-4 fill-emerald-500/20" />
               </div>
             ) : (
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-secondary border border-surface-border text-gray-400 font-mono text-xs font-semibold group-hover:border-forge-cyan/40 group-hover:text-forge-cyan transition-colors">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-secondary border border-surface-border text-slate-500 dark:text-gray-400 font-mono text-xs font-semibold group-hover:border-forge-cyan/40 group-hover:text-forge-cyan transition-colors">
                 #{problem.id}
               </div>
             )}
@@ -44,7 +44,7 @@ export function ProblemCard({ problem, isSolved, index }: ProblemCardProps) {
           <div className="min-w-0 space-y-1.5">
             <Link
               href={`/problems/${problem.slug}`}
-              className="text-base font-bold text-white group-hover:text-forge-cyan transition-colors block truncate"
+              className="text-base font-bold text-slate-900 dark:text-white group-hover:text-forge-cyan transition-colors block truncate"
             >
               {problem.title}
             </Link>
@@ -53,7 +53,7 @@ export function ProblemCard({ problem, isSolved, index }: ProblemCardProps) {
               {problem.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2 py-0.5 rounded-md bg-surface-secondary/80 border border-surface-border text-[11px] font-mono text-gray-400"
+                  className="px-2 py-0.5 rounded-md bg-surface-secondary/80 border border-surface-border text-[11px] font-mono text-slate-600 dark:text-gray-400"
                 >
                   {tag}
                 </span>
@@ -68,7 +68,7 @@ export function ProblemCard({ problem, isSolved, index }: ProblemCardProps) {
           <Link
             href={`/problems/${problem.slug}`}
             aria-label={`Solve ${problem.title}`}
-            className="p-2 rounded-lg bg-surface-secondary/60 border border-surface-border text-gray-400 group-hover:text-forge-cyan group-hover:border-forge-cyan/30 group-hover:bg-forge-cyan/10 transition-all"
+            className="p-2 rounded-lg bg-surface-secondary/60 border border-surface-border text-slate-500 dark:text-gray-400 group-hover:text-forge-cyan group-hover:border-forge-cyan/30 group-hover:bg-forge-cyan/10 transition-all"
           >
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>

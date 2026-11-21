@@ -46,7 +46,7 @@ export function HeroSection() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
               Sharpen your coding skills with instant, sandboxed JavaScript &amp; Python
               execution inside your browser. No servers, no sign-ups, and no paywalls.
             </p>
@@ -55,16 +55,16 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
               <Link
                 href="/problems"
-                className="group relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-background bg-forge-cyan shadow-neon-cyan hover:shadow-cyan-400/60 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 w-full sm:w-auto"
+                className="group relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white dark:text-background bg-forge-cyan shadow-neon-cyan hover:shadow-cyan-400/60 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 w-full sm:w-auto"
               >
-                <Sparkles className="w-4 h-4 text-background group-hover:rotate-12 transition-transform" />
+                <Sparkles className="w-4 h-4 text-white dark:text-background group-hover:rotate-12 transition-transform" />
                 <span>Start Solving Now</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
 
               <Link
                 href="/roadmap"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-foreground bg-surface/70 hover:bg-surface-secondary border border-surface-border hover:border-forge-purple/50 transition-all duration-200 w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-slate-800 dark:text-foreground bg-surface/70 hover:bg-surface-secondary border border-surface-border hover:border-forge-purple/50 transition-all duration-200 w-full sm:w-auto"
               >
                 <span>View Learning Path</span>
               </Link>
@@ -74,15 +74,15 @@ export function HeroSection() {
             <div className="pt-6 grid grid-cols-3 gap-3 border-t border-surface-border text-left">
               <div className="flex items-center gap-2.5">
                 <Cpu className="w-4 h-4 text-forge-cyan shrink-0" />
-                <span className="text-xs text-gray-300 font-mono">WebAssembly Powered</span>
+                <span className="text-xs text-slate-600 dark:text-gray-300 font-mono">WebAssembly Powered</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-forge-green shrink-0" />
-                <span className="text-xs text-gray-300 font-mono">Zero Logins Required</span>
+                <span className="text-xs text-slate-600 dark:text-gray-300 font-mono">Zero Logins Required</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Terminal className="w-4 h-4 text-forge-purple shrink-0" />
-                <span className="text-xs text-gray-300 font-mono">Isolated Web Worker</span>
+                <span className="text-xs text-slate-600 dark:text-gray-300 font-mono">Isolated Web Worker</span>
               </div>
             </div>
           </motion.div>
@@ -104,7 +104,7 @@ export function HeroSection() {
               <HeroCanvas />
 
               <div className="text-center pb-2">
-                <span className="text-[11px] font-mono text-gray-400 uppercase tracking-widest">
+                <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400 uppercase tracking-widest">
                   Interactive 3D Simulation • Drag / Move Mouse
                 </span>
               </div>

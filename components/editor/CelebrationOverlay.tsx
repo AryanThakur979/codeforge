@@ -73,16 +73,16 @@ export function CelebrationOverlay({
                 <span>All Test Cases Passed!</span>
               </div>
 
-              <h2 className="text-2xl font-black text-white tracking-tight">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                 Challenge Conquered!
               </h2>
 
-              <p className="text-sm text-gray-300 mt-1">
+              <p className="text-sm text-slate-600 dark:text-gray-300 mt-1">
                 You successfully solved <span className="text-forge-cyan font-bold">{problemTitle}</span>.
               </p>
 
               {/* Runtime badge */}
-              <div className="mt-4 px-4 py-2 rounded-xl bg-surface-secondary/70 border border-surface-border text-xs font-mono text-gray-300">
+              <div className="mt-4 px-4 py-2 rounded-xl bg-surface-secondary/70 border border-surface-border text-xs font-mono text-slate-700 dark:text-gray-300">
                 Execution speed: <span className="text-forge-cyan font-semibold">{runtime} ms</span>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function CelebrationOverlay({
                 <Link
                   href={`/problems/${nextSlug}`}
                   onClick={onClose}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-[0.98] transition-all text-sm"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-white dark:text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-[0.98] transition-all text-sm"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>Next Challenge</span>
@@ -104,7 +104,7 @@ export function CelebrationOverlay({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-3 rounded-xl font-semibold text-gray-300 bg-surface-secondary hover:bg-surface-secondary/80 border border-surface-border transition-colors text-sm"
+                className="px-5 py-3 rounded-xl font-semibold text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white bg-surface-secondary hover:bg-surface-secondary/80 border border-surface-border transition-colors text-sm"
               >
                 Keep Reviewing
               </button>

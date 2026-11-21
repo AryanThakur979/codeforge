@@ -13,17 +13,17 @@ export function CTASection() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-cyan/10 border border-forge-cyan/30 text-forge-cyan text-xs font-mono uppercase tracking-wider mb-6">
             Ready to Code?
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
             Start Your Free Algorithmic Journey Today
           </h2>
-          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-600 dark:text-gray-300 max-w-2xl mx-auto mb-8 leading-relaxed">
             No registration, no monthly subscription, no cloud latency. Open any problem and run your code immediately.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/problems"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-background bg-forge-cyan shadow-neon-cyan hover:shadow-cyan-400/60 hover:scale-105 active:scale-[0.98] transition-all duration-200"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-white dark:text-background bg-forge-cyan shadow-neon-cyan hover:shadow-cyan-400/60 hover:scale-105 active:scale-[0.98] transition-all duration-200"
             >
               <Sparkles className="w-5 h-5" />
               <span>Browse All Problems</span>
@@ -32,7 +32,7 @@ export function CTASection() {
 
             <Link
               href="/roadmap"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-white bg-surface-secondary border border-surface-border hover:border-forge-purple/50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-slate-800 dark:text-white bg-surface-secondary border border-surface-border hover:border-forge-purple/50 transition-colors"
             >
               <span>Explore Topic Roadmap</span>
             </Link>

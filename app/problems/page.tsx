@@ -144,10 +144,10 @@ export default function ProblemsPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-cyan/10 border border-forge-cyan/30 text-forge-cyan text-xs font-mono uppercase tracking-wider">
               Problem Directory • {totalCount.toLocaleString()} Coding Challenges
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Algorithmic Problem Archive
             </h1>
-            <p className="text-sm text-gray-400 max-w-xl">
+            <p className="text-sm text-slate-600 dark:text-gray-400 max-w-xl">
               Sharpen your intuition across 3,000+ data structure & algorithm patterns. Full 19-language support with instant execution.
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function ProblemsPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Trophy className="w-4 h-4 text-forge-amber" />
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   {solvedCount} / {totalCount.toLocaleString()} Solved
                 </span>
                 <span className="text-xs text-forge-cyan font-mono">({progressPercent}%)</span>
@@ -172,7 +172,7 @@ export default function ProblemsPage() {
 
             <button
               onClick={handlePickRandom}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-surface-secondary border border-surface-border hover:border-forge-cyan/40 hover:text-forge-cyan transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-surface-secondary border border-surface-border text-slate-700 dark:text-gray-300 hover:border-forge-cyan/40 hover:text-forge-cyan transition-all"
             >
               <Shuffle className="w-3.5 h-3.5" />
               <span>Pick Random</span>
@@ -186,13 +186,13 @@ export default function ProblemsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
           {/* Search Input */}
           <div className="lg:col-span-5 relative">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search 3,000+ problems, topics, keywords..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface border border-surface-border text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-forge-cyan/60 focus:ring-1 focus:ring-forge-cyan/60 transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface border border-surface-border text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-forge-cyan/60 focus:ring-1 focus:ring-forge-cyan/60 transition-all shadow-sm"
             />
           </div>
 
@@ -205,7 +205,7 @@ export default function ProblemsPage() {
                 className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
                   selectedDifficulty === diff
                     ? "bg-surface-secondary text-forge-cyan font-semibold shadow-sm"
-                    : "text-gray-400 hover:text-white"
+                    : "text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white"
                 }`}
               >
                 {diff}
@@ -221,8 +221,8 @@ export default function ProblemsPage() {
                 onClick={() => setStatusFilter(status)}
                 className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
                   statusFilter === status
-                    ? "bg-surface-secondary text-white font-semibold shadow-sm"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-surface-secondary text-slate-900 dark:text-white font-semibold shadow-sm"
+                    : "text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white"
                 }`}
               >
                 {status}
@@ -236,24 +236,24 @@ export default function ProblemsPage() {
               value={sortBy}
               aria-label="Sort problems by"
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full py-2.5 px-3 rounded-xl bg-surface border border-surface-border text-xs text-white font-medium focus:outline-none focus:border-forge-cyan/50 focus:ring-1 focus:ring-forge-cyan/50 cursor-pointer shadow-sm"
+              className="w-full py-2.5 px-3 rounded-xl bg-surface border border-surface-border text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-forge-cyan/50 focus:ring-1 focus:ring-forge-cyan/50 cursor-pointer shadow-sm"
             >
-              <option value="id" className="bg-surface text-white py-1">Sort by: Problem #</option>
-              <option value="title" className="bg-surface text-white py-1">Sort by: Title</option>
-              <option value="difficulty" className="bg-surface text-white py-1">Sort by: Difficulty</option>
+              <option value="id" className="bg-surface text-slate-900 dark:text-white py-1">Sort by: Problem #</option>
+              <option value="title" className="bg-surface text-slate-900 dark:text-white py-1">Sort by: Title</option>
+              <option value="difficulty" className="bg-surface text-slate-900 dark:text-white py-1">Sort by: Difficulty</option>
             </select>
           </div>
         </div>
 
         {/* Topic Tag Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-xs">
-          <span className="text-gray-500 font-mono text-[11px] uppercase mr-1 shrink-0">Popular Topics:</span>
+          <span className="text-slate-500 dark:text-gray-400 font-mono text-[11px] uppercase mr-1 shrink-0">Popular Topics:</span>
           <button
             onClick={() => setSelectedTag("All")}
             className={`px-3 py-1 rounded-lg font-mono text-xs whitespace-nowrap transition-all shrink-0 ${
               selectedTag === "All"
                 ? "bg-forge-cyan/15 text-forge-cyan border border-forge-cyan/30 font-semibold"
-                : "bg-surface/60 text-gray-400 border border-surface-border hover:text-white"
+                : "bg-surface/60 text-slate-600 hover:text-slate-950 dark:text-gray-400 border border-surface-border dark:hover:text-white"
             }`}
           >
             All Topics ({totalCount})
@@ -265,7 +265,7 @@ export default function ProblemsPage() {
               className={`px-3 py-1 rounded-lg font-mono text-xs whitespace-nowrap transition-all shrink-0 ${
                 selectedTag === tag
                   ? "bg-forge-cyan/15 text-forge-cyan border border-forge-cyan/30 font-semibold"
-                  : "bg-surface/60 text-gray-400 border border-surface-border hover:text-white"
+                  : "bg-surface/60 text-slate-600 hover:text-slate-950 dark:text-gray-400 border border-surface-border dark:hover:text-white"
               }`}
             >
               {tag}
@@ -275,7 +275,7 @@ export default function ProblemsPage() {
       </div>
 
       {/* Problems Counter Bar */}
-      <div className="flex items-center justify-between text-xs font-mono text-gray-400 px-1">
+      <div className="flex items-center justify-between text-xs font-mono text-slate-600 dark:text-gray-400 px-1">
         <span>
           Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredProblems.length)} of {filteredProblems.length.toLocaleString()} problems
         </span>
@@ -286,9 +286,9 @@ export default function ProblemsPage() {
       <div className="space-y-3">
         {filteredProblems.length === 0 ? (
           <div className="p-12 text-center rounded-2xl border border-surface-border bg-surface/30 backdrop-blur-md space-y-3">
-            <Filter className="w-8 h-8 text-gray-500 mx-auto" />
-            <h3 className="text-base font-semibold text-white">No matching problems found</h3>
-            <p className="text-xs text-gray-400">
+            <Filter className="w-8 h-8 text-slate-400 dark:text-gray-400 mx-auto" />
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">No matching problems found</h3>
+            <p className="text-xs text-slate-600 dark:text-gray-400">
               Try adjusting your search query, difficulty filters, or topic tags.
             </p>
             <button
@@ -320,7 +320,7 @@ export default function ProblemsPage() {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="pt-6 border-t border-surface-border flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs font-mono text-gray-400">
+          <div className="text-xs font-mono text-slate-600 dark:text-gray-400">
             Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredProblems.length)} of {filteredProblems.length.toLocaleString()} problems
           </div>
 
@@ -329,7 +329,7 @@ export default function ProblemsPage() {
               onClick={() => handlePageChange(1)}
               disabled={currentPage === 1}
               title="First Page"
-              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronsLeft className="w-4 h-4" />
             </button>
@@ -338,7 +338,7 @@ export default function ProblemsPage() {
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               title="Previous Page"
-              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -351,14 +351,14 @@ export default function ProblemsPage() {
                     onClick={() => handlePageChange(p)}
                     className={`min-w-[36px] h-9 px-2.5 rounded-lg font-medium transition-all ${
                       currentPage === p
-                        ? "bg-forge-cyan text-background font-bold shadow-neon-cyan"
-                        : "bg-surface/60 border border-surface-border text-gray-300 hover:text-white hover:bg-surface-secondary"
+                        ? "bg-forge-cyan text-white dark:text-background font-bold shadow-neon-cyan"
+                        : "bg-surface/60 border border-surface-border text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary"
                     }`}
                   >
                     {p}
                   </button>
                 ) : (
-                  <span key={`dots-${i}`} className="px-2 text-gray-500">
+                  <span key={`dots-${i}`} className="px-2 text-slate-400 dark:text-gray-500">
                     ...
                   </span>
                 )
@@ -369,7 +369,7 @@ export default function ProblemsPage() {
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               title="Next Page"
-              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -378,7 +378,7 @@ export default function ProblemsPage() {
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
               title="Last Page"
-              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
               <ChevronsRight className="w-4 h-4" />
             </button>

@@ -138,11 +138,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   if (!problem) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-4">
-        <h1 className="text-2xl font-bold text-white">Problem Not Found</h1>
-        <p className="text-sm text-gray-400">The requested problem could not be found.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Problem Not Found</h1>
+        <p className="text-sm text-slate-600 dark:text-gray-400">The requested problem could not be found.</p>
         <Link
           href="/problems"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-forge-cyan text-background font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-forge-cyan text-white dark:text-background font-semibold text-sm"
         >
           Return to Problems Directory
         </Link>
@@ -254,19 +254,19 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/problems"
-            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Problems</span>
           </Link>
-          <span className="text-gray-600">|</span>
-          <span className="text-gray-400 font-semibold">#{problem.id}</span>
-          <span className="text-white font-medium truncate max-w-[200px] sm:max-w-none">
+          <span className="text-slate-400 dark:text-gray-600">|</span>
+          <span className="text-slate-600 dark:text-gray-400 font-semibold">#{problem.id}</span>
+          <span className="text-slate-900 dark:text-white font-medium truncate max-w-[200px] sm:max-w-none">
             {problem.title}
           </span>
           <DifficultyBadge difficulty={problem.difficulty} />
           {isSolved && (
-            <span className="hidden sm:inline-flex items-center gap-1 text-emerald-400 text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+            <span className="hidden sm:inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               <CheckCircle2 className="w-3 h-3" />
               <span>Solved</span>
             </span>
@@ -278,7 +278,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
             <Link
               href={`/problems/${prevSlug}`}
               title="Previous Problem"
-              className="p-1.5 rounded-lg border border-surface-border text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+              className="p-1.5 rounded-lg border border-surface-border text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white hover:border-gray-500 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -287,7 +287,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
             <Link
               href={`/problems/${nextSlug}`}
               title="Next Problem"
-              className="p-1.5 rounded-lg border border-surface-border text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+              className="p-1.5 rounded-lg border border-surface-border text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white hover:border-gray-500 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -301,8 +301,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           onClick={() => setMobileTab("description")}
           className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "description"
-              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50"
-              : "border-transparent text-gray-400 hover:text-white"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50 font-semibold"
+              : "border-transparent text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white"
           }`}
         >
           Description
@@ -311,8 +311,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           onClick={() => setMobileTab("editor")}
           className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "editor"
-              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50"
-              : "border-transparent text-gray-400 hover:text-white"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50 font-semibold"
+              : "border-transparent text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white"
           }`}
         >
           Code
@@ -321,8 +321,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           onClick={() => setMobileTab("results")}
           className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "results"
-              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50"
-              : "border-transparent text-gray-400 hover:text-white"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50 font-semibold"
+              : "border-transparent text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white"
           }`}
         >
           Results {results ? `(${results.allPassed ? "Pass" : "Fail"})` : ""}
@@ -342,7 +342,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
             {problem.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-secondary border border-surface-border text-gray-400"
+                className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-secondary border border-surface-border text-slate-600 dark:text-gray-400"
               >
                 {tag}
               </span>
@@ -350,13 +350,13 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           </div>
 
           {/* Description */}
-          <div className="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed space-y-4">
+          <div className="prose dark:prose-invert prose-sm max-w-none text-slate-800 dark:text-gray-300 leading-relaxed space-y-4">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{problem.description}</ReactMarkdown>
           </div>
 
           {/* Examples */}
           <div className="space-y-4 pt-2">
-            <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
               Examples
             </h3>
             {problem.examples.map((ex, i) => (
@@ -364,18 +364,18 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 key={ex.id || i}
                 className="p-3.5 rounded-xl border border-surface-border bg-surface-secondary/40 font-mono text-xs space-y-1.5"
               >
-                <div className="text-gray-400 font-semibold">Example {i + 1}:</div>
+                <div className="text-slate-600 dark:text-gray-400 font-semibold">Example {i + 1}:</div>
                 <div>
-                  <span className="text-gray-500">Input: </span>
-                  <span className="text-gray-200">{ex.input}</span>
+                  <span className="text-slate-500 dark:text-gray-400">Input: </span>
+                  <span className="text-slate-900 dark:text-gray-200">{ex.input}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Output: </span>
-                  <span className="text-emerald-400">{ex.output}</span>
+                  <span className="text-slate-500 dark:text-gray-400">Output: </span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{ex.output}</span>
                 </div>
                 {ex.explanation && (
-                  <div className="pt-1 text-gray-400 text-[11px] leading-relaxed">
-                    <span className="text-gray-500">Explanation: </span>
+                  <div className="pt-1 text-slate-600 dark:text-gray-400 text-[11px] leading-relaxed">
+                    <span className="text-slate-500 dark:text-gray-400">Explanation: </span>
                     {ex.explanation}
                   </div>
                 )}
@@ -385,10 +385,10 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
           {/* Constraints */}
           <div className="space-y-2 pt-2">
-            <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
               Constraints
             </h3>
-            <ul className="list-disc list-inside space-y-1 font-mono text-xs text-gray-400">
+            <ul className="list-disc list-inside space-y-1 font-mono text-xs text-slate-600 dark:text-gray-400">
               {problem.constraints.map((c, i) => (
                 <li key={i}>{c}</li>
               ))}
@@ -398,7 +398,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           {/* Collapsible Hints */}
           {problem.hints && problem.hints.length > 0 && (
             <div className="space-y-2 pt-4 border-t border-surface-border">
-              <h3 className="text-sm font-bold text-white font-mono flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-1.5">
                 <HelpCircle className="w-4 h-4 text-forge-amber" />
                 <span>Hints ({problem.hints.length})</span>
               </h3>
@@ -414,17 +414,17 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                         onClick={() =>
                           setOpenHints((prev) => ({ ...prev, [idx]: !prev[idx] }))
                         }
-                        className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-mono font-medium text-gray-300 hover:text-white transition-colors"
+                        className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-mono font-medium text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white transition-colors"
                       >
                         <span>Hint {idx + 1}</span>
                         <ChevronDown
-                          className={`w-3.5 h-3.5 text-gray-400 transition-transform ${
+                          className={`w-3.5 h-3.5 text-slate-500 dark:text-gray-400 transition-transform ${
                             isOpen ? "rotate-180" : ""
                           }`}
                         />
                       </button>
                       {isOpen && (
-                        <div className="px-3.5 pb-3 pt-1 text-xs text-gray-300 font-sans leading-relaxed border-t border-surface-border/50">
+                        <div className="px-3.5 pb-3 pt-1 text-xs text-slate-700 dark:text-gray-300 font-sans leading-relaxed border-t border-surface-border/50">
                           {hint}
                         </div>
                       )}
@@ -445,7 +445,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           {/* Editor Header Bar */}
           <div className="border-b border-surface-border bg-surface/90 px-4 py-2 flex flex-wrap items-center justify-between gap-3 relative z-30">
             <div className="flex items-center gap-2.5">
-              <span className="text-[11px] font-mono uppercase text-gray-500 hidden sm:inline flex items-center gap-1">
+              <span className="text-[11px] font-mono uppercase text-slate-500 dark:text-gray-400 hidden sm:inline flex items-center gap-1">
                 <Code2 className="w-3.5 h-3.5 text-forge-cyan" />
                 <span>Code</span>
               </span>
@@ -455,11 +455,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 <button
                   type="button"
                   onClick={() => setLangDropdownOpen((prev) => !prev)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary border border-surface-border hover:border-forge-cyan/50 text-xs font-mono font-semibold text-white hover:text-forge-cyan transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary border border-surface-border hover:border-forge-cyan/50 text-xs font-mono font-semibold text-slate-900 dark:text-white hover:text-forge-cyan transition-all shadow-sm"
                 >
                   <span>{currentLangMeta?.name || "C++"}</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-gray-400 transition-transform ${
+                    className={`w-3.5 h-3.5 text-slate-500 dark:text-gray-400 transition-transform ${
                       langDropdownOpen ? "rotate-180 text-forge-cyan" : ""
                     }`}
                   />
@@ -467,7 +467,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
                 {/* Floating LeetCode-style 3-Column Menu */}
                 {langDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 z-50 w-[280px] sm:w-[460px] p-2.5 rounded-2xl bg-[#090e1c] border border-surface-border shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-1.5 max-h-[420px] overflow-y-auto">
+                  <div className="absolute left-0 top-full mt-1.5 z-50 w-[280px] sm:w-[460px] p-2.5 rounded-2xl bg-surface border border-surface-border shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-1.5 max-h-[420px] overflow-y-auto">
                     {/* Column 1 */}
                     <div className="space-y-0.5 sm:border-r border-surface-border/50 sm:pr-1.5">
                       {col1.map((l) => (
@@ -481,7 +481,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
                             language === l.id
                               ? "bg-forge-cyan/15 text-forge-cyan font-bold"
-                              : "text-gray-300 hover:text-white hover:bg-surface-secondary/70"
+                              : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                           }`}
                         >
                           <span>{l.name}</span>
@@ -505,7 +505,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
                             language === l.id
                               ? "bg-forge-cyan/15 text-forge-cyan font-bold"
-                              : "text-gray-300 hover:text-white hover:bg-surface-secondary/70"
+                              : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                           }`}
                         >
                           <span>{l.name}</span>
@@ -529,7 +529,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
                             language === l.id
                               ? "bg-forge-cyan/15 text-forge-cyan font-bold"
-                              : "text-gray-300 hover:text-white hover:bg-surface-secondary/70"
+                              : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                           }`}
                         >
                           <span>{l.name}</span>
@@ -554,28 +554,28 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                   ) : pyodideStatus === "ready" ? (
                     <>
                       <span className="w-2 h-2 rounded-full bg-forge-green" />
-                      <span className="text-gray-300 hidden sm:inline">Pyodide 3.12 Ready</span>
+                      <span className="text-slate-700 dark:text-gray-300 hidden sm:inline">Pyodide 3.12 Ready</span>
                     </>
                   ) : pyodideStatus === "error" ? (
                     <>
                       <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <span className="text-rose-400 hidden sm:inline">Pyodide Error</span>
+                      <span className="text-rose-700 dark:text-rose-400 hidden sm:inline">Pyodide Error</span>
                     </>
                   ) : (
                     <>
-                      <Cpu className="w-3 h-3 text-gray-500" />
-                      <span className="text-gray-400 hidden sm:inline">Pyodide Standby</span>
+                      <Cpu className="w-3 h-3 text-slate-400 dark:text-gray-500" />
+                      <span className="text-slate-600 dark:text-gray-400 hidden sm:inline">Pyodide Standby</span>
                     </>
                   )}
                 </div>
               ) : language === "javascript" || language === "typescript" ? (
-                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-mono text-cyan-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-mono text-forge-cyan">
+                  <span className="w-1.5 h-1.5 rounded-full bg-forge-cyan" />
                   <span>0ms Sandbox Ready</span>
                 </div>
               ) : (
-                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-700 dark:text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Cloud Compiler Ready</span>
                 </div>
               )}
@@ -586,7 +586,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 type="button"
                 onClick={handleResetCode}
                 title="Reset Code Template"
-                className="flex items-center gap-1 text-xs font-mono text-gray-400 hover:text-white px-2.5 py-1 rounded-md hover:bg-surface-secondary transition-colors"
+                className="flex items-center gap-1 text-xs font-mono text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white px-2.5 py-1 rounded-md hover:bg-surface-secondary transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Reset</span>
@@ -596,7 +596,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 type="button"
                 onClick={() => setIsFullscreen((prev) => !prev)}
                 title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Editor"}
-                className="p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-surface-secondary transition-colors"
+                className="p-1.5 text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white rounded-md hover:bg-surface-secondary transition-colors"
               >
                 {isFullscreen ? (
                   <Minimize2 className="w-3.5 h-3.5" />
@@ -631,7 +631,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
           {/* Action Execution Bar */}
           <div className="border-t border-b border-surface-border bg-surface/90 px-4 py-2.5 flex items-center justify-between gap-3">
-            <span className="text-[11px] font-mono text-gray-400 hidden sm:inline">
+            <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400 hidden sm:inline">
               Runtime: {currentLangMeta?.runtimeLabel || "Sandboxed Web Worker"}
             </span>
 
@@ -640,7 +640,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 type="button"
                 onClick={handleRunSampleTests}
                 disabled={isRunning}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold font-mono text-gray-200 bg-surface-secondary border border-surface-border hover:border-forge-cyan/40 hover:text-forge-cyan active:scale-95 transition-all disabled:opacity-50"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold font-mono text-slate-700 hover:text-slate-950 dark:text-gray-200 bg-surface-secondary border border-surface-border hover:border-forge-cyan/40 hover:text-forge-cyan active:scale-95 transition-all disabled:opacity-50"
               >
                 {isRunning ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-forge-cyan" />
@@ -654,10 +654,10 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isRunning}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold font-mono text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold font-mono text-white dark:text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 font-bold"
               >
                 {isRunning ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-background" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white dark:text-background" />
                 ) : (
                   <Send className="w-3.5 h-3.5" />
                 )}

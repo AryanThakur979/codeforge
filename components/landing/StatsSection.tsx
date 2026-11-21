@@ -27,8 +27,8 @@ export function StatsSection() {
               <div className="text-3xl sm:text-4xl font-extrabold text-gradient-neon font-mono mb-1">
                 {s.value}
               </div>
-              <div className="text-sm font-semibold text-white">{s.label}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{s.sub}</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">{s.label}</div>
+              <div className="text-xs text-slate-600 dark:text-gray-400 mt-0.5">{s.sub}</div>
             </motion.div>
           ))}
         </div>

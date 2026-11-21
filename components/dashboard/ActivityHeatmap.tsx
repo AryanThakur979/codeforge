@@ -58,8 +58,8 @@ export function ActivityHeatmap({ submissions }: ActivityHeatmapProps) {
     <div className="rounded-2xl border border-surface-border bg-surface/40 p-6 backdrop-blur-md space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-bold text-white">Daily Activity Heatmap</h3>
-          <p className="text-xs text-gray-400">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">Daily Activity Heatmap</h3>
+          <p className="text-xs text-slate-600 dark:text-gray-400">
             Recorded algorithmic problem submissions across the past 16 weeks.
           </p>
         </div>
@@ -72,7 +72,7 @@ export function ActivityHeatmap({ submissions }: ActivityHeatmapProps) {
               {hoveredCell.count === 1 ? "submission" : "submissions"}
             </span>
           ) : (
-            <span className="text-xs font-mono text-gray-500">Hover over any square for date details</span>
+            <span className="text-xs font-mono text-slate-500 dark:text-gray-400">Hover over any square for date details</span>
           )}
         </div>
       </div>
@@ -81,7 +81,7 @@ export function ActivityHeatmap({ submissions }: ActivityHeatmapProps) {
       <div className="overflow-x-auto pb-2">
         <div className="flex gap-1.5 min-w-fit">
           {/* Day of week labels */}
-          <div className="flex flex-col justify-between py-1 pr-1 text-[10px] font-mono text-gray-500 select-none">
+          <div className="flex flex-col justify-between py-1 pr-1 text-[10px] font-mono text-slate-500 dark:text-gray-400 select-none">
             <span>Mon</span>
             <span>Wed</span>
             <span>Fri</span>
@@ -108,15 +108,15 @@ export function ActivityHeatmap({ submissions }: ActivityHeatmapProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-surface-border">
+      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-gray-400 pt-2 border-t border-surface-border">
         <span>Contributions saved in local browser storage</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-mono">Less</span>
+          <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400">Less</span>
           <div className="w-3 h-3 rounded-[2px] bg-surface-secondary/60 border border-surface-border" />
           <div className="w-3 h-3 rounded-[2px] bg-forge-cyan/30 border border-forge-cyan/50" />
           <div className="w-3 h-3 rounded-[2px] bg-forge-cyan/60 border border-forge-cyan/80" />
           <div className="w-3 h-3 rounded-[2px] bg-forge-cyan border-white" />
-          <span className="text-[11px] font-mono">More</span>
+          <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400">More</span>
         </div>
       </div>
     </div>

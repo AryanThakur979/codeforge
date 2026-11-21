@@ -72,7 +72,13 @@ export const useCodeForgeStore = create<CodeForgeState>((set, get) => ({
   toggleTheme: () => {
     const nextTheme = get().theme === "dark" ? "light" : "dark";
     if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("light", nextTheme === "light");
+      if (nextTheme === "light") {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+      } else {
+        document.documentElement.classList.remove("light");
+        document.documentElement.classList.add("dark");
+      }
     }
     set({ theme: nextTheme });
     try {
@@ -82,7 +88,13 @@ export const useCodeForgeStore = create<CodeForgeState>((set, get) => ({
 
   setTheme: (theme) => {
     if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("light", theme === "light");
+      if (theme === "light") {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+      } else {
+        document.documentElement.classList.remove("light");
+        document.documentElement.classList.add("dark");
+      }
     }
     set({ theme });
     try {

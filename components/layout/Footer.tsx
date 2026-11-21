@@ -13,11 +13,11 @@ export function Footer() {
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-forge-purple/20 border border-forge-cyan/30">
                 <Terminal className="w-4 h-4 text-forge-cyan" />
               </div>
-              <span className="text-lg font-bold text-white font-mono tracking-tight">
+              <span className="text-lg font-bold text-slate-900 dark:text-white font-mono tracking-tight">
                 {siteConfig.name}
               </span>
             </div>
-            <p className="text-sm text-gray-400 max-w-sm leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-gray-400 max-w-sm leading-relaxed">
               {siteConfig.description}
             </p>
             <div className="flex items-center gap-2 text-xs text-forge-cyan font-mono bg-forge-cyan/10 border border-forge-cyan/20 w-fit px-3 py-1 rounded-full">
@@ -28,10 +28,10 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider font-mono mb-3">
+            <h4 className="text-xs font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wider font-mono mb-3">
               Explore
             </h4>
-            <ul className="space-y-2 text-sm text-gray-400">
+            <ul className="space-y-2 text-sm text-slate-600 dark:text-gray-400">
               <li>
                 <Link href="/problems" className="hover:text-forge-cyan transition-colors">
                   Problems Directory
@@ -57,10 +57,10 @@ export function Footer() {
 
           {/* Developer / Open Source */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider font-mono mb-3">
+            <h4 className="text-xs font-semibold text-slate-700 dark:text-gray-300 uppercase tracking-wider font-mono mb-3">
               Open & Private
             </h4>
-            <ul className="space-y-2 text-sm text-gray-400">
+            <ul className="space-y-2 text-sm text-slate-600 dark:text-gray-400">
               <li className="flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5 text-forge-amber" />
                 <span>Zero Server Tracking</span>
@@ -74,7 +74,7 @@ export function Footer() {
                   href={siteConfig.links.github}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 hover:text-white transition-colors"
+                  className="flex items-center gap-2 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   <Github className="w-4 h-4" />
                   <span>GitHub Repository</span>
@@ -85,9 +85,9 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 border-t border-surface-border flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+        <div className="pt-8 border-t border-surface-border flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 dark:text-gray-500 gap-4">
           <p>© {new Date().getFullYear()} {siteConfig.name}. Handcrafted for students and developers worldwide.</p>
-          <div className="flex items-center gap-1 text-gray-400">
+          <div className="flex items-center gap-1 text-slate-600 dark:text-gray-400">
             <span>Built with</span>
             <Heart className="w-3.5 h-3.5 text-forge-pink fill-forge-pink" />
             <span>for zero-cost algorithmic education</span>

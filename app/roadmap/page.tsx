@@ -58,17 +58,17 @@ export default function RoadmapPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-purple/10 border border-forge-purple/30 text-forge-purple text-xs font-mono uppercase tracking-wider">
               Algorithmic Skill Tree • 9 Curated Stages
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Algorithmic Learning Path
             </h1>
-            <p className="text-sm text-gray-400 max-w-xl">
+            <p className="text-sm text-slate-600 dark:text-gray-400 max-w-xl">
               A structured roadmap guiding you from fundamental data structures to advanced dynamic programming patterns.
             </p>
           </div>
 
           <Link
             href="/problems"
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-95 transition-all text-xs font-mono shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-white dark:text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-95 transition-all text-xs font-mono shrink-0"
           >
             <Sparkles className="w-4 h-4" />
             <span>Practice All Topics</span>
@@ -88,10 +88,10 @@ export default function RoadmapPage() {
 
           const difficultyBadgeColor =
             topic.difficulty === "Beginner"
-              ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+              ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
               : topic.difficulty === "Intermediate"
-              ? "text-amber-400 bg-amber-500/10 border-amber-500/30"
-              : "text-rose-400 bg-rose-500/10 border-rose-500/30";
+              ? "text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30"
+              : "text-rose-700 dark:text-rose-400 bg-rose-500/10 border-rose-500/30";
 
           return (
             <motion.div
@@ -115,10 +115,10 @@ export default function RoadmapPage() {
                 >
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div>
-                      <div className="text-[11px] font-mono text-gray-400 uppercase tracking-wider mb-1">
+                      <div className="text-[11px] font-mono text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">
                         Step 0{topic.step} • {topic.category}
                       </div>
-                      <h3 className="text-lg font-bold text-white group-hover:text-forge-cyan transition-colors">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-forge-cyan transition-colors">
                         {topic.title}
                       </h3>
                     </div>
@@ -130,17 +130,17 @@ export default function RoadmapPage() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                  <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed mb-4">
                     {topic.description}
                   </p>
 
                   {/* Problem Pills & Solved Metric */}
                   <div className="space-y-3 pt-3 border-t border-surface-border">
                     <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-gray-400">Mastery Progress</span>
+                      <span className="text-slate-600 dark:text-gray-400">Mastery Progress</span>
                       <span
                         className={`font-semibold ${
-                          isCompleted ? "text-emerald-400" : "text-forge-cyan"
+                          isCompleted ? "text-emerald-700 dark:text-emerald-400" : "text-forge-cyan"
                         }`}
                       >
                         {stats.solved} / {stats.total} Solved
@@ -156,14 +156,14 @@ export default function RoadmapPage() {
                             href={`/problems/${prob.slug}`}
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${
                               solved
-                                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
-                                : "bg-surface-secondary border-surface-border text-gray-300 hover:text-white hover:border-forge-cyan/40"
+                                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-semibold"
+                                : "bg-surface-secondary border-surface-border text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white hover:border-forge-cyan/40"
                             }`}
                           >
                             {solved ? (
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             ) : (
-                              <Circle className="w-3 h-3 text-gray-500 shrink-0" />
+                              <Circle className="w-3 h-3 text-slate-400 dark:text-gray-500 shrink-0" />
                             )}
                             <span className="truncate max-w-[140px]">{prob.title}</span>
                           </Link>
@@ -177,7 +177,7 @@ export default function RoadmapPage() {
               {/* Center Node Marker */}
               <div className="relative z-10 flex items-center justify-center w-12 h-12 rounded-2xl bg-surface border-2 border-surface-border shadow-neon-cyan shrink-0">
                 {isCompleted ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 animate-pulse" />
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 animate-pulse" />
                 ) : (
                   <span className="font-mono text-sm font-black text-forge-cyan">
                     0{topic.step}

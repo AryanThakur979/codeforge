@@ -13,7 +13,15 @@ export function ThemeToggle() {
     const saved = localStorage.getItem("codeforge_theme");
     if (saved === "light" || saved === "dark") {
       setTheme(saved);
-      document.documentElement.classList.toggle("light", saved === "light");
+      if (saved === "light") {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+      } else {
+        document.documentElement.classList.remove("light");
+        document.documentElement.classList.add("dark");
+      }
+    } else {
+      document.documentElement.classList.add("dark");
     }
   }, [setTheme]);
 

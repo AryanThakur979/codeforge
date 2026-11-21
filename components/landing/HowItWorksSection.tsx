@@ -38,10 +38,10 @@ export function HowItWorksSection() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-cyan/10 border border-forge-cyan/30 text-forge-cyan text-xs font-mono uppercase tracking-wider">
             The Workflow
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             How CodeForge Works
           </h2>
-          <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
+          <p className="text-slate-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed">
             Zero servers, zero API tokens, and zero latency. Your machine is the execution engine.
           </p>
         </div>
@@ -60,15 +60,15 @@ export function HowItWorksSection() {
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-black font-mono text-forge-cyan/40">
+                    <span className="text-2xl font-black font-mono text-forge-cyan/60 dark:text-forge-cyan/40">
                       {s.step}
                     </span>
                     <div className="p-2.5 rounded-lg bg-surface-secondary border border-surface-border">
                       <Icon className="w-5 h-5 text-forge-cyan" />
                     </div>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-2">{s.title}</h3>
-                  <p className="text-xs text-gray-400 leading-relaxed">{s.desc}</p>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{s.title}</h3>
+                  <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed">{s.desc}</p>
                 </div>
               </motion.div>
             );
