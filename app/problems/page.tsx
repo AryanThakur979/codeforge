@@ -138,7 +138,7 @@ export default function ProblemsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search problems, topics, keywords..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface/60 border border-surface-border text-sm text-white placeholder-gray-500 focus:outline-none focus:border-forge-cyan/50 focus:ring-1 focus:ring-forge-cyan/50 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface border border-surface-border text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-forge-cyan/60 focus:ring-1 focus:ring-forge-cyan/60 transition-all shadow-sm"
             />
           </div>
 
@@ -182,11 +182,11 @@ export default function ProblemsPage() {
               value={sortBy}
               aria-label="Sort problems by"
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full py-2.5 px-3 rounded-xl bg-surface/60 border border-surface-border text-xs text-gray-300 focus:outline-none focus:border-forge-cyan/50"
+              className="w-full py-2.5 px-3 rounded-xl bg-surface border border-surface-border text-xs text-white font-medium focus:outline-none focus:border-forge-cyan/50 focus:ring-1 focus:ring-forge-cyan/50 cursor-pointer shadow-sm"
             >
-              <option value="id">Sort by: Problem #</option>
-              <option value="title">Sort by: Title</option>
-              <option value="difficulty">Sort by: Difficulty</option>
+              <option value="id" className="bg-surface text-white py-1">Sort by: Problem #</option>
+              <option value="title" className="bg-surface text-white py-1">Sort by: Title</option>
+              <option value="difficulty" className="bg-surface text-white py-1">Sort by: Difficulty</option>
             </select>
           </div>
         </div>

@@ -430,10 +430,10 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as any)}
                 aria-label="Select programming language"
-                className="py-1 px-2.5 rounded-lg bg-surface-secondary border border-surface-border text-xs font-mono font-semibold text-forge-cyan focus:outline-none focus:border-forge-cyan/50"
+                className="py-1 px-2.5 rounded-lg bg-surface-secondary border border-surface-border text-xs font-mono font-semibold text-forge-cyan focus:outline-none focus:border-forge-cyan/50 cursor-pointer shadow-sm"
               >
-                <option value="javascript">JavaScript (ES6+)</option>
-                <option value="python">Python 3 (Pyodide WASM)</option>
+                <option value="javascript" className="bg-surface text-white">JavaScript (ES6+)</option>
+                <option value="python" className="bg-surface text-white">Python 3 (Pyodide WASM)</option>
               </select>
 
               {/* Pyodide Loading / Status Indicator */}

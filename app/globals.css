@@ -50,6 +50,40 @@ body {
   outline-offset: 2px;
 }
 
+/* Custom Dropdown, Input & Option Styling */
+input, textarea, select {
+  color: var(--foreground);
+  background-color: var(--surface);
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  color: #ffffff !important;
+}
+
+.light input,
+.light textarea,
+.light select {
+  color: #0f172a !important;
+}
+
+select {
+  cursor: pointer;
+  background-color: var(--surface);
+}
+
+option {
+  background-color: #0c1122;
+  color: #f3f4f6;
+  padding: 8px 12px;
+}
+
+.light option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
 /* Custom Selection Highlight */
 ::selection {
   background-color: rgba(0, 240, 255, 0.3);
