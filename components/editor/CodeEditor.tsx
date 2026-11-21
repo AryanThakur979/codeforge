@@ -4,8 +4,11 @@ import { useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
+import { cpp } from "@codemirror/lang-cpp";
+import { java } from "@codemirror/lang-java";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
+import { SupportedLanguage } from "@/types/problem";
 
 export interface CodeEditorHandle {
   insertText: (text: string) => void;
@@ -14,7 +17,7 @@ export interface CodeEditorHandle {
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
-  language: "javascript" | "python";
+  language: SupportedLanguage;
   height?: string;
   className?: string;
 }
@@ -42,8 +45,14 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
       const exts = [];
       if (language === "javascript") {
         exts.push(javascript({ jsx: false, typescript: false }));
+      } else if (language === "typescript") {
+        exts.push(javascript({ jsx: false, typescript: true }));
       } else if (language === "python") {
         exts.push(python());
+      } else if (language === "cpp" || language === "c") {
+        exts.push(cpp());
+      } else if (language === "java") {
+        exts.push(java());
       }
       return exts;
     }, [language]);
@@ -83,7 +92,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
             completionKeymap: true,
             lintKeymap: true,
           }}
-          className="border border-surface-border rounded-b-xl overflow-hidden"
+          className="h-full border-none outline-none font-mono text-[13px] leading-relaxed"
         />
       </div>
     );

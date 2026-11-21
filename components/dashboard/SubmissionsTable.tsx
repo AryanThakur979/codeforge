@@ -79,7 +79,23 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
                       {sub.problemTitle}
                     </Link>
                   </td>
-                  <td className="py-3 px-4 text-gray-300 capitalize">{sub.language}</td>
+                  <td className="py-3 px-4 text-gray-300">
+                    <span className="px-2 py-0.5 rounded-md bg-surface-secondary border border-surface-border text-[11px] font-mono font-medium text-forge-cyan">
+                      {sub.language === "cpp"
+                        ? "C++"
+                        : sub.language === "javascript"
+                        ? "JavaScript"
+                        : sub.language === "typescript"
+                        ? "TypeScript"
+                        : sub.language === "python"
+                        ? "Python 3"
+                        : sub.language === "java"
+                        ? "Java"
+                        : sub.language === "c"
+                        ? "C"
+                        : sub.language}
+                    </span>
+                  </td>
                   <td className="py-3 px-4 text-gray-300">{formatTime(sub.runtime)}</td>
                   <td className="py-3 px-4 text-gray-400 text-[11px]">
                     {new Date(sub.timestamp).toLocaleDateString()}{" "}

@@ -9,11 +9,13 @@ export function MobileToolbar({ onInsertSymbol }: MobileToolbarProps) {
     { label: "( )", insert: "()" },
     { label: "{ }", insert: "{}" },
     { label: "[ ]", insert: "[]" },
+    { label: "< >", insert: "<>" },
     { label: ";", insert: ";" },
     { label: ":", insert: ":" },
     { label: '"', insert: '""' },
     { label: "'", insert: "''" },
     { label: "=", insert: " = " },
+    { label: "->", insert: "->" },
     { label: "=>", insert: " => " },
     { label: "Tab", insert: "  " },
   ];

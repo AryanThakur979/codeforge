@@ -20,7 +20,7 @@ export function TestResultsPanel({ response, isRunning, sampleTestCases }: TestR
       <div className="p-8 flex flex-col items-center justify-center space-y-3 text-center min-h-[160px]">
         <div className="w-8 h-8 rounded-full border-2 border-forge-cyan border-t-transparent animate-spin" />
         <p className="text-xs font-mono text-forge-cyan animate-pulse">
-          Evaluating solution in isolated runtime...
+          Evaluating solution in isolated runtime / cloud compiler...
         </p>
       </div>
     );
@@ -83,7 +83,7 @@ export function TestResultsPanel({ response, isRunning, sampleTestCases }: TestR
           ) : response.status === "error" ? (
             <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-0.5 rounded-full">
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Runtime Error</span>
+              <span>Compiler / Runtime Error</span>
             </span>
           ) : response.allPassed ? (
             <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
@@ -101,29 +101,44 @@ export function TestResultsPanel({ response, isRunning, sampleTestCases }: TestR
 
       {/* Tab Contents */}
       <div className="flex-1 p-4 overflow-y-auto max-h-[320px]">
+        {/* Compiler / Global Error Display */}
+        {response.errorSummary && (
+          <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 font-mono text-xs text-rose-300 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-rose-400">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>Diagnostic Report:</span>
+            </div>
+            <pre className="whitespace-pre-wrap overflow-x-auto text-[11px] leading-relaxed text-rose-200 bg-black/30 p-2.5 rounded-lg border border-rose-500/20">
+              {response.errorSummary}
+            </pre>
+          </div>
+        )}
+
         {activeTab === "tests" ? (
           <div className="space-y-4">
             {/* Case Selectors */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {results.map((res, idx) => (
-                <button
-                  key={res.testCaseId || idx}
-                  onClick={() => setSelectedCaseIndex(idx)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
-                    selectedCaseIndex === idx
-                      ? "bg-surface-secondary border border-forge-cyan/50 text-white"
-                      : "bg-surface/60 border border-surface-border text-gray-400 hover:text-white"
-                  }`}
-                >
-                  {res.passed ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <XCircle className="w-3.5 h-3.5 text-rose-400" />
-                  )}
-                  <span>Case {idx + 1}</span>
-                </button>
-              ))}
-            </div>
+            {results.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {results.map((res, idx) => (
+                  <button
+                    key={res.testCaseId || idx}
+                    onClick={() => setSelectedCaseIndex(idx)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+                      selectedCaseIndex === idx
+                        ? "bg-surface-secondary border border-forge-cyan/50 text-white"
+                        : "bg-surface/60 border border-surface-border text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {res.passed ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                    )}
+                    <span>Case {idx + 1}</span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Active Test Case Detail */}
             {currentResult && (
@@ -176,7 +191,7 @@ export function TestResultsPanel({ response, isRunning, sampleTestCases }: TestR
           <div className="font-mono text-xs space-y-2">
             {logs.length === 0 ? (
               <p className="text-gray-500 italic p-4 text-center">
-                No logs recorded. Use console.log() (JS) or print() (Python) to debug.
+                No logs recorded. Use console.log() (JS/TS), print() (Python), cout (C++), or System.out.println() (Java) to debug.
               </p>
             ) : (
               <div className="space-y-1 p-3 rounded-xl bg-surface-secondary/60 border border-surface-border">

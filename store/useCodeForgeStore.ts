@@ -2,11 +2,13 @@
 
 import { create } from "zustand";
 
+import { SupportedLanguage } from "@/types/problem";
+
 export interface SubmissionRecord {
   id: string;
   problemSlug: string;
   problemTitle: string;
-  language: "javascript" | "python";
+  language: SupportedLanguage | string;
   status: "passed" | "failed" | "error" | "tle";
   runtime: number;
   timestamp: string;
@@ -31,7 +33,7 @@ interface CodeForgeState {
   markProblemSolved: (
     slug: string,
     problemTitle: string,
-    language: "javascript" | "python",
+    language: SupportedLanguage | string,
     runtime: number,
     code: string
   ) => void;
@@ -39,7 +41,7 @@ interface CodeForgeState {
   recordSubmission: (
     problemSlug: string,
     problemTitle: string,
-    language: "javascript" | "python",
+    language: SupportedLanguage | string,
     status: "passed" | "failed" | "error" | "tle",
     runtime: number,
     code: string

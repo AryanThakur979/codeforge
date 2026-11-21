@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Cpu,
   Loader2,
+  Terminal,
 } from "lucide-react";
 import { getProblemBySlug, problems } from "@/data/problems";
 import { DifficultyBadge } from "@/components/problems/DifficultyBadge";
@@ -28,8 +29,12 @@ import { MobileToolbar } from "@/components/editor/MobileToolbar";
 import { CelebrationOverlay } from "@/components/editor/CelebrationOverlay";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
 import { jsRunner } from "@/lib/runners/javascriptRunner";
+import { tsRunner } from "@/lib/runners/typescriptRunner";
 import { pythonRunner, PyodideStatus } from "@/lib/runners/pythonRunner";
+import { judge0Runner } from "@/lib/runners/judge0Runner";
 import { RunnerResponse } from "@/lib/runners/types";
+import { SUPPORTED_LANGUAGES, SupportedLanguage } from "@/types/problem";
+import { getStarterCode } from "@/lib/codeTemplates";
 
 interface ProblemWorkspaceProps {
   slug: string;
@@ -50,7 +55,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   } = useCodeForgeStore();
 
   // Local component states
-  const [language, setLanguage] = useState<"javascript" | "python">("javascript");
+  const [language, setLanguage] = useState<SupportedLanguage>("javascript");
   const [code, setCode] = useState<string>("");
   const [mobileTab, setMobileTab] = useState<"description" | "editor" | "results">("description");
   const [isRunning, setIsRunning] = useState(false);
@@ -82,14 +87,14 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     }
   }, [language]);
 
-  // Load code drafts
+  // Load code drafts or starter code
   useEffect(() => {
     if (!problem) return;
     const savedDraft = userCodeDrafts[problem.slug]?.[language];
     if (savedDraft) {
       setCode(savedDraft);
     } else {
-      setCode(problem.starterCode[language]);
+      setCode(getStarterCode(problem, language));
     }
     setResults(null);
   }, [problem, language, userCodeDrafts]);
@@ -134,10 +139,23 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
   const handleResetCode = () => {
     if (window.confirm("Reset your solution to the original starter template?")) {
-      const initialCode = problem.starterCode[language];
+      const initialCode = getStarterCode(problem, language);
       setCode(initialCode);
       saveCodeDraft(problem.slug, language, initialCode);
       setResults(null);
+    }
+  };
+
+  const runWithLanguage = async (testCasesToRun: typeof problem.testCases): Promise<RunnerResponse> => {
+    if (language === "javascript") {
+      return await jsRunner.run(code, problem.functionName, testCasesToRun);
+    } else if (language === "typescript") {
+      return await tsRunner.run(code, problem.functionName, testCasesToRun);
+    } else if (language === "python") {
+      return await pythonRunner.run(code, problem.functionName, testCasesToRun);
+    } else {
+      judge0Runner.setLanguage(language as "cpp" | "java" | "c");
+      return await judge0Runner.run(code, problem.functionName, testCasesToRun);
     }
   };
 
@@ -148,13 +166,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     const sampleCases = problem.testCases.filter((tc) => !tc.isHidden);
 
     try {
-      if (language === "javascript") {
-        const res = await jsRunner.run(code, problem.functionName, sampleCases);
-        setResults(res);
-      } else {
-        const res = await pythonRunner.run(code, problem.functionName, sampleCases);
-        setResults(res);
-      }
+      const res = await runWithLanguage(sampleCases);
+      setResults(res);
     } catch (e: any) {
       setResults({
         results: [],
@@ -174,13 +187,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     setMobileTab("results");
 
     try {
-      let res: RunnerResponse;
-      if (language === "javascript") {
-        res = await jsRunner.run(code, problem.functionName, problem.testCases);
-      } else {
-        res = await pythonRunner.run(code, problem.functionName, problem.testCases);
-      }
-
+      const res = await runWithLanguage(problem.testCases);
       setResults(res);
 
       recordSubmission(
@@ -212,6 +219,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   };
 
   const isSolved = Boolean(solvedProblems[problem.slug]);
+  const currentLangMeta = SUPPORTED_LANGUAGES.find((l) => l.id === language);
 
   return (
     <div
@@ -219,46 +227,36 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
         isFullscreen ? "fixed inset-0 z-50 bg-background" : "min-h-[calc(100vh-4rem)]"
       }`}
     >
-      <CelebrationOverlay
-        isOpen={celebrationOpen}
-        onClose={() => setCelebrationOpen(false)}
-        problemTitle={problem.title}
-        runtime={lastPassedRuntime}
-        nextSlug={nextSlug}
-      />
-
-      {/* Top Problem Header Bar */}
-      <div className="border-b border-surface-border bg-surface/80 backdrop-blur-md px-4 py-2.5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
+      {/* Top Breadcrumb & Navigation Bar */}
+      <div className="border-b border-surface-border bg-surface/80 backdrop-blur-md px-4 py-2.5 flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center gap-3">
           <Link
             href="/problems"
-            className="flex items-center gap-1 text-xs font-mono text-gray-400 hover:text-forge-cyan transition-colors shrink-0"
+            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Problems</span>
+            <span>Problems</span>
           </Link>
-
-          <span className="text-gray-600 hidden sm:inline">|</span>
-
-          <div className="flex items-center gap-2 truncate">
-            <span className="font-mono text-xs text-gray-400 shrink-0">#{problem.id}</span>
-            <h1 className="text-sm font-bold text-white truncate">{problem.title}</h1>
-            <DifficultyBadge difficulty={problem.difficulty} />
-            {isSolved && (
-              <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0">
-                <CheckCircle2 className="w-3 h-3" />
-                <span className="hidden md:inline">Solved</span>
-              </span>
-            )}
-          </div>
+          <span className="text-gray-600">|</span>
+          <span className="text-gray-400 font-semibold">#{problem.id}</span>
+          <span className="text-white font-medium truncate max-w-[200px] sm:max-w-none">
+            {problem.title}
+          </span>
+          <DifficultyBadge difficulty={problem.difficulty} />
+          {isSolved && (
+            <span className="hidden sm:inline-flex items-center gap-1 text-emerald-400 text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Solved</span>
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2">
           {prevSlug && (
             <Link
               href={`/problems/${prevSlug}`}
               title="Previous Problem"
-              className="p-1.5 rounded-lg border border-surface-border text-gray-400 hover:text-white hover:bg-surface-secondary transition-colors"
+              className="p-1.5 rounded-lg border border-surface-border text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -267,7 +265,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
             <Link
               href={`/problems/${nextSlug}`}
               title="Next Problem"
-              className="p-1.5 rounded-lg border border-surface-border text-gray-400 hover:text-white hover:bg-surface-secondary transition-colors"
+              className="p-1.5 rounded-lg border border-surface-border text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -275,59 +273,61 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
         </div>
       </div>
 
-      {/* Mobile Tab Selectors */}
-      <div className="flex lg:hidden border-b border-surface-border bg-surface/90 px-3 py-1.5 gap-2">
+      {/* Mobile Tab Switcher */}
+      <div className="lg:hidden flex border-b border-surface-border bg-surface/90 text-xs font-mono">
         <button
           onClick={() => setMobileTab("description")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors ${
+          className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "description"
-              ? "bg-surface-secondary text-forge-cyan border border-forge-cyan/30"
-              : "text-gray-400 hover:text-white"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50"
+              : "border-transparent text-gray-400 hover:text-white"
           }`}
         >
           Description
         </button>
         <button
           onClick={() => setMobileTab("editor")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors ${
+          className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "editor"
-              ? "bg-surface-secondary text-forge-cyan border border-forge-cyan/30"
-              : "text-gray-400 hover:text-white"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50"
+              : "border-transparent text-gray-400 hover:text-white"
           }`}
         >
-          Code Editor
+          Code
         </button>
         <button
           onClick={() => setMobileTab("results")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-medium font-mono transition-colors ${
+          className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "results"
-              ? "bg-surface-secondary text-forge-cyan border border-forge-cyan/30"
-              : "text-gray-400 hover:text-white"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50"
+              : "border-transparent text-gray-400 hover:text-white"
           }`}
         >
-          Results {results ? `(${results.allPassed ? "✓" : "✗"})` : ""}
+          Results {results ? `(${results.allPassed ? "Pass" : "Fail"})` : ""}
         </button>
       </div>
 
-      {/* Main Workspace Split */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
-        {/* Left Column: Problem Description */}
+      {/* Main Split Grid Workspace */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+        {/* Left Column: Problem Description, Examples, Hints */}
         <div
-          className={`lg:col-span-5 border-r border-surface-border bg-surface/20 overflow-y-auto p-4 sm:p-6 space-y-6 ${
+          className={`lg:col-span-5 border-r border-surface-border p-4 sm:p-6 overflow-y-auto space-y-6 ${
             mobileTab === "description" ? "block" : "hidden lg:block"
           }`}
         >
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* Tags */}
+          <div className="flex flex-wrap gap-1.5">
             {problem.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 rounded-md bg-surface-secondary/80 border border-surface-border text-[11px] font-mono text-gray-400"
+                className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-secondary border border-surface-border text-gray-400"
               >
                 {tag}
               </span>
             ))}
           </div>
 
+          {/* Description */}
           <div className="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed space-y-4">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{problem.description}</ReactMarkdown>
           </div>
@@ -428,16 +428,19 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
               </span>
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value as any)}
+                onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
                 aria-label="Select programming language"
                 className="py-1 px-2.5 rounded-lg bg-surface-secondary border border-surface-border text-xs font-mono font-semibold text-forge-cyan focus:outline-none focus:border-forge-cyan/50 cursor-pointer shadow-sm"
               >
-                <option value="javascript" className="bg-surface text-white">JavaScript (ES6+)</option>
-                <option value="python" className="bg-surface text-white">Python 3 (Pyodide WASM)</option>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.id} value={lang.id} className="bg-surface text-white">
+                    {lang.name}
+                  </option>
+                ))}
               </select>
 
-              {/* Pyodide Loading / Status Indicator */}
-              {language === "python" && (
+              {/* Status / Runtime Badge */}
+              {language === "python" ? (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-secondary border border-surface-border text-[11px] font-mono">
                   {pyodideStatus === "loading" ? (
                     <>
@@ -452,14 +455,24 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                   ) : pyodideStatus === "error" ? (
                     <>
                       <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <span className="text-rose-400 hidden sm:inline">WASM Load Error</span>
+                      <span className="text-rose-400 hidden sm:inline">Pyodide Error</span>
                     </>
                   ) : (
                     <>
-                      <Cpu className="w-3 h-3 text-gray-400" />
+                      <Cpu className="w-3 h-3 text-gray-500" />
                       <span className="text-gray-400 hidden sm:inline">Pyodide Standby</span>
                     </>
                   )}
+                </div>
+              ) : language === "cpp" || language === "c" || language === "java" ? (
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Cloud Compiler Ready</span>
+                </div>
+              ) : (
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-mono text-cyan-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <span>0ms Sandbox Ready</span>
                 </div>
               )}
             </div>
@@ -468,8 +481,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
               <button
                 type="button"
                 onClick={handleResetCode}
-                title="Reset starter template"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono text-gray-400 hover:text-white hover:bg-surface-secondary transition-colors"
+                title="Reset Code Template"
+                className="flex items-center gap-1 text-xs font-mono text-gray-400 hover:text-white px-2.5 py-1 rounded-md hover:bg-surface-secondary transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Reset</span>
@@ -477,9 +490,9 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
               <button
                 type="button"
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                title="Toggle fullscreen"
-                className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-surface-secondary transition-colors"
+                onClick={() => setIsFullscreen((prev) => !prev)}
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Editor"}
+                className="p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-surface-secondary transition-colors"
               >
                 {isFullscreen ? (
                   <Minimize2 className="w-3.5 h-3.5" />
@@ -490,12 +503,16 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
             </div>
           </div>
 
-          {/* Mobile Quick Keys */}
-          <MobileToolbar onInsertSymbol={(s) => editorRef.current?.insertText(s)} />
+          {/* Quick Keys Mobile Toolbar */}
+          <MobileToolbar
+            onInsertSymbol={(symbol) => {
+              editorRef.current?.insertText(symbol);
+            }}
+          />
 
-          {/* CodeMirror 6 Editor */}
+          {/* CodeMirror 6 Editor Container */}
           <div
-            className={`flex-1 overflow-auto ${
+            className={`flex-1 overflow-auto bg-surface/20 ${
               mobileTab === "results" ? "hidden lg:block" : "block"
             }`}
           >
@@ -510,8 +527,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
           {/* Action Execution Bar */}
           <div className="border-t border-b border-surface-border bg-surface/90 px-4 py-2.5 flex items-center justify-between gap-3">
-            <span className="text-[11px] font-mono text-gray-500 hidden sm:inline">
-              Runtime: {language === "python" ? "Pyodide WASM Worker" : "Sandboxed Web Worker"} (3s Guard)
+            <span className="text-[11px] font-mono text-gray-400 hidden sm:inline">
+              Runtime: {currentLangMeta?.runtimeLabel || "Sandboxed Web Worker"}
             </span>
 
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -521,7 +538,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 disabled={isRunning}
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold font-mono text-gray-200 bg-surface-secondary border border-surface-border hover:border-forge-cyan/40 hover:text-forge-cyan active:scale-95 transition-all disabled:opacity-50"
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
+                {isRunning ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-forge-cyan" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                )}
                 <span>Run Tests</span>
               </button>
 
@@ -531,7 +552,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 disabled={isRunning}
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold font-mono text-background bg-forge-cyan shadow-neon-cyan hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
               >
-                <Send className="w-3.5 h-3.5" />
+                {isRunning ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-background" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
                 <span>Submit Solution</span>
               </button>
             </div>
@@ -551,6 +576,15 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           </div>
         </div>
       </div>
+
+      {/* Celebration Confetti & Dialog on Accepted Solution */}
+      <CelebrationOverlay
+        isOpen={celebrationOpen}
+        onClose={() => setCelebrationOpen(false)}
+        problemTitle={problem.title}
+        runtime={lastPassedRuntime}
+        nextSlug={nextSlug}
+      />
     </div>
   );
 }
