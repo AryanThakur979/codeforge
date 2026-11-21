@@ -208,6 +208,9 @@ export interface ProblemExample {
   explanation?: string;
 }
 
+export type MentorMode = "mentor_bhaiya" | "detective" | "cricket_commentary";
+export type HintLanguage = "english" | "hinglish";
+
 export interface Problem {
   id: string;
   slug: string;
@@ -218,6 +221,7 @@ export interface Problem {
   examples: ProblemExample[];
   constraints: string[];
   hints: string[];
+  hintTopic?: string;
   functionName: string;
   starterCode: {
     javascript: string;

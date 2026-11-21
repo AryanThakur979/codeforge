@@ -157,6 +157,44 @@ To add another language (e.g. Ruby, Go, or Lua via WebAssembly):
 
 ---
 
+## 🤖 AI Hint Ladder & Mentor System
+
+CodeForge includes a progressive, pedagogically safe **4-Level AI Hint Ladder** that guides students without spoiling the full solution:
+1. **Level 1 (Nudge)**: One guiding question that prompts intuition.
+2. **Level 2 (Analogy)**: A real-world analogy (cricket, chai, Mumbai local, kitchen, cards) illustrating the core pattern.
+3. **Level 3 (Approach)**: Plain-English algorithmic strategy steps with zero code.
+4. **Level 4 (Skeleton)**: Partial pseudocode with blanks (`____`) for the student to fill in. Never the full solution.
+
+### Mentor Personas & Code Doctor
+- **Mentor Bhaiya**: Friendly elder brother with authentic Hinglish (or English).
+- **The Detective**: Noir investigator treating edge cases and invariants as crime scene clues.
+- **Cricket Commentary**: High-energy stadium commentary with witty cricket metaphors.
+- **Code Doctor Toggle ("Look at my code")**: Sends current editor code for targeted line pointers without rewriting the code.
+
+### 🔑 How to Get a Free AI Key & Set Env Variables
+
+CodeForge uses a provider-agnostic OpenAI-compatible HTTP Chat Completions endpoint. You can use any free tier provider:
+
+| Provider | Recommended Model | Free Tier Details | Base URL |
+| :--- | :--- | :--- | :--- |
+| **Groq (Recommended)** | `llama-3.3-70b-versatile` or `llama-3.1-8b-instant` | Instant key, very high tokens/min gratis | `https://api.groq.com/openai/v1` |
+| **Google Gemini** | `gemini-1.5-flash` | Free tier via Google AI Studio | `https://generativelanguage.googleapis.com/v1beta/openai` |
+| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct:free` | Aggregates free models with one key | `https://openrouter.ai/api/v1` |
+
+#### Steps to Set in Vercel:
+1. Open your project on [Vercel Dashboard](https://vercel.com).
+2. Go to **Settings** &rarr; **Environment Variables**.
+3. Add the following variables:
+   - `AI_API_KEY`: Your provider API key (e.g. `gsk_...` from [console.groq.com](https://console.groq.com/keys)).
+   - `AI_BASE_URL`: `https://api.groq.com/openai/v1` (or your chosen provider base URL).
+   - `AI_MODEL`: `llama-3.3-70b-versatile` (or your chosen model).
+   - `AI_DAILY_LIMIT`: `500` (optional daily cap to protect free tier quota).
+4. Save and redeploy.
+
+> **Note**: If `AI_API_KEY` is not provided, the system automatically and gracefully degrades to the handcrafted built-in hint ladder for all problems with zero build or runtime errors.
+
+---
+
 ## 🚢 Deploy to Vercel (100% Free, Zero Config)
 
 Deploying CodeForge requires **no environment variables**, **no database**, and **no paid cloud addons**:

@@ -28,6 +28,7 @@ import { CodeEditor, CodeEditorHandle } from "@/components/editor/CodeEditor";
 import { TestResultsPanel } from "@/components/editor/TestResultsPanel";
 import { MobileToolbar } from "@/components/editor/MobileToolbar";
 import { CelebrationOverlay } from "@/components/editor/CelebrationOverlay";
+import { AIHintPanel } from "@/components/editor/AIHintPanel";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
 import { jsRunner } from "@/lib/runners/javascriptRunner";
 import { tsRunner } from "@/lib/runners/typescriptRunner";
@@ -59,7 +60,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   const [language, setLanguage] = useState<SupportedLanguage>("cpp");
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [code, setCode] = useState<string>("");
-  const [mobileTab, setMobileTab] = useState<"description" | "editor" | "results">("description");
+  const [mobileTab, setMobileTab] = useState<"description" | "hints" | "editor" | "results">("description");
+  const [leftTab, setLeftTab] = useState<"description" | "hints">("description");
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<RunnerResponse | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -133,6 +135,18 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
       return problems[currentIndex - 1].slug;
     }
     return undefined;
+  }, [problem]);
+
+  const hintsUsed = useMemo(() => {
+    if (!problem || typeof window === "undefined") return 0;
+    try {
+      const saved = localStorage.getItem(`codeforge_ai_hints_${problem.slug}`);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        return Array.isArray(arr) ? arr.length : 0;
+      }
+    } catch {}
+    return 0;
   }, [problem]);
 
   if (!problem) {
@@ -274,6 +288,19 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setLeftTab("hints");
+              setMobileTab("hints");
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold text-forge-cyan bg-forge-cyan/10 border border-forge-cyan/30 hover:bg-forge-cyan/20 active:scale-95 transition-all shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            <span className="hidden sm:inline">Get AI Hint</span>
+            <span className="sm:hidden">Hint</span>
+          </button>
+
           {prevSlug && (
             <Link
               href={`/problems/${prevSlug}`}
@@ -308,6 +335,17 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           Description
         </button>
         <button
+          onClick={() => setMobileTab("hints")}
+          className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors flex items-center justify-center gap-1 ${
+            mobileTab === "hints"
+              ? "border-forge-cyan text-forge-cyan bg-surface-secondary/50 font-semibold"
+              : "border-transparent text-slate-600 hover:text-slate-950 dark:text-gray-400 dark:hover:text-white"
+          }`}
+        >
+          <Sparkles className="w-3 h-3 text-forge-cyan" />
+          <span>AI Hints</span>
+        </button>
+        <button
           onClick={() => setMobileTab("editor")}
           className={`flex-1 py-2.5 text-center font-medium border-b-2 transition-colors ${
             mobileTab === "editor"
@@ -333,105 +371,167 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         {/* Left Column: Problem Description, Examples, Hints */}
         <div
-          className={`lg:col-span-5 border-r border-surface-border p-4 sm:p-6 overflow-y-auto space-y-6 ${
-            mobileTab === "description" ? "block" : "hidden lg:block"
+          className={`lg:col-span-5 border-r border-surface-border p-4 sm:p-6 overflow-y-auto space-y-5 ${
+            mobileTab === "description" || mobileTab === "hints" ? "block" : "hidden lg:block"
           }`}
         >
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1.5">
-            {problem.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-secondary border border-surface-border text-slate-600 dark:text-gray-400"
-              >
-                {tag}
-              </span>
-            ))}
+          {/* Left Column Tab Switcher */}
+          <div className="flex items-center gap-2 pb-2 border-b border-surface-border">
+            <button
+              type="button"
+              onClick={() => {
+                setLeftTab("description");
+                setMobileTab("description");
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+                leftTab === "description" && mobileTab !== "hints"
+                  ? "bg-surface-secondary text-slate-900 dark:text-white font-bold border border-surface-border shadow-sm"
+                  : "text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Problem Description
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLeftTab("hints");
+                setMobileTab("hints");
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+                leftTab === "hints" || mobileTab === "hints"
+                  ? "bg-forge-cyan/15 text-forge-cyan font-bold border border-forge-cyan/30 shadow-sm"
+                  : "text-slate-600 dark:text-gray-400 hover:text-forge-cyan"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-forge-cyan" />
+              <span>AI Hint Ladder</span>
+            </button>
           </div>
 
-          {/* Description */}
-          <div className="prose dark:prose-invert prose-sm max-w-none text-slate-800 dark:text-gray-300 leading-relaxed space-y-4">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{problem.description}</ReactMarkdown>
-          </div>
-
-          {/* Examples */}
-          <div className="space-y-4 pt-2">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
-              Examples
-            </h3>
-            {problem.examples.map((ex, i) => (
-              <div
-                key={ex.id || i}
-                className="p-3.5 rounded-xl border border-surface-border bg-surface-secondary/40 font-mono text-xs space-y-1.5"
-              >
-                <div className="text-slate-600 dark:text-gray-400 font-semibold">Example {i + 1}:</div>
-                <div>
-                  <span className="text-slate-500 dark:text-gray-400">Input: </span>
-                  <span className="text-slate-900 dark:text-gray-200">{ex.input}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 dark:text-gray-400">Output: </span>
-                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{ex.output}</span>
-                </div>
-                {ex.explanation && (
-                  <div className="pt-1 text-slate-600 dark:text-gray-400 text-[11px] leading-relaxed">
-                    <span className="text-slate-500 dark:text-gray-400">Explanation: </span>
-                    {ex.explanation}
-                  </div>
-                )}
+          {leftTab === "hints" || mobileTab === "hints" ? (
+            <AIHintPanel problem={problem} currentCode={code} isProblemSolved={isSolved} />
+          ) : (
+            <div className="space-y-6">
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5">
+                {problem.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-secondary border border-surface-border text-slate-600 dark:text-gray-400"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Constraints */}
-          <div className="space-y-2 pt-2">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
-              Constraints
-            </h3>
-            <ul className="list-disc list-inside space-y-1 font-mono text-xs text-slate-600 dark:text-gray-400">
-              {problem.constraints.map((c, i) => (
-                <li key={i}>{c}</li>
-              ))}
-            </ul>
-          </div>
+              {/* Description */}
+              <div className="prose dark:prose-invert prose-sm max-w-none text-slate-800 dark:text-gray-300 leading-relaxed space-y-4">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{problem.description}</ReactMarkdown>
+              </div>
 
-          {/* Collapsible Hints */}
-          {problem.hints && problem.hints.length > 0 && (
-            <div className="space-y-2 pt-4 border-t border-surface-border">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-forge-amber" />
-                <span>Hints ({problem.hints.length})</span>
-              </h3>
-              <div className="space-y-2">
-                {problem.hints.map((hint, idx) => {
-                  const isOpen = openHints[idx];
-                  return (
-                    <div
-                      key={idx}
-                      className="rounded-xl border border-surface-border bg-surface-secondary/30 overflow-hidden"
-                    >
-                      <button
-                        onClick={() =>
-                          setOpenHints((prev) => ({ ...prev, [idx]: !prev[idx] }))
-                        }
-                        className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-mono font-medium text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white transition-colors"
-                      >
-                        <span>Hint {idx + 1}</span>
-                        <ChevronDown
-                          className={`w-3.5 h-3.5 text-slate-500 dark:text-gray-400 transition-transform ${
-                            isOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-                      {isOpen && (
-                        <div className="px-3.5 pb-3 pt-1 text-xs text-slate-700 dark:text-gray-300 font-sans leading-relaxed border-t border-surface-border/50">
-                          {hint}
-                        </div>
-                      )}
+              {/* Examples */}
+              <div className="space-y-4 pt-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
+                  Examples
+                </h3>
+                {problem.examples.map((ex, i) => (
+                  <div
+                    key={ex.id || i}
+                    className="p-3.5 rounded-xl border border-surface-border bg-surface-secondary/40 font-mono text-xs space-y-1.5"
+                  >
+                    <div className="text-slate-600 dark:text-gray-400 font-semibold">Example {i + 1}:</div>
+                    <div>
+                      <span className="text-slate-500 dark:text-gray-400">Input: </span>
+                      <span className="text-slate-900 dark:text-gray-200">{ex.input}</span>
                     </div>
-                  );
-                })}
+                    <div>
+                      <span className="text-slate-500 dark:text-gray-400">Output: </span>
+                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{ex.output}</span>
+                    </div>
+                    {ex.explanation && (
+                      <div className="pt-1 text-slate-600 dark:text-gray-400 text-[11px] leading-relaxed">
+                        <span className="text-slate-500 dark:text-gray-400">Explanation: </span>
+                        {ex.explanation}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+
+              {/* Constraints */}
+              <div className="space-y-2 pt-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
+                  Constraints
+                </h3>
+                <ul className="list-disc list-inside space-y-1 font-mono text-xs text-slate-600 dark:text-gray-400">
+                  {problem.constraints.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Need a hint CTA Banner */}
+              <div className="p-4 rounded-xl border border-forge-cyan/30 bg-forge-cyan/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-forge-cyan" />
+                    <span>Need algorithmic guidance?</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-gray-400">
+                    Unlock 4 progressive hint levels (Nudge, Analogy, Approach, Skeleton) with zero spoilers.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLeftTab("hints");
+                    setMobileTab("hints");
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-forge-cyan text-white dark:text-background font-bold text-xs font-mono shrink-0 shadow-neon-cyan hover:scale-[1.02] active:scale-95 transition-transform"
+                >
+                  Open AI Hints
+                </button>
+              </div>
+
+              {/* Collapsible Handcrafted Hints */}
+              {problem.hints && problem.hints.length > 0 && (
+                <div className="space-y-2 pt-4 border-t border-surface-border">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-1.5">
+                    <HelpCircle className="w-4 h-4 text-forge-amber" />
+                    <span>Quick Hints ({problem.hints.length})</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {problem.hints.map((hint, idx) => {
+                      const isOpen = openHints[idx];
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-surface-border bg-surface-secondary/30 overflow-hidden"
+                        >
+                          <button
+                            onClick={() =>
+                              setOpenHints((prev) => ({ ...prev, [idx]: !prev[idx] }))
+                            }
+                            className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-mono font-medium text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white transition-colors"
+                          >
+                            <span>Hint {idx + 1}</span>
+                            <ChevronDown
+                              className={`w-3.5 h-3.5 text-slate-500 dark:text-gray-400 transition-transform ${
+                                isOpen ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                          {isOpen && (
+                            <div className="px-3.5 pb-3 pt-1 text-xs text-slate-700 dark:text-gray-300 font-sans leading-relaxed border-t border-surface-border/50">
+                              {hint}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -439,7 +539,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
         {/* Right Column: Code Editor & Results */}
         <div
           className={`lg:col-span-7 flex flex-col bg-surface/30 overflow-hidden ${
-            mobileTab === "description" ? "hidden lg:flex" : "flex"
+            mobileTab === "description" || mobileTab === "hints" ? "hidden lg:flex" : "flex"
           }`}
         >
           {/* Editor Header Bar */}
@@ -688,6 +788,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
         problemTitle={problem.title}
         runtime={lastPassedRuntime}
         nextSlug={nextSlug}
+        hintsUsed={hintsUsed}
       />
     </div>
   );

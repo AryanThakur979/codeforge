@@ -12,6 +12,7 @@ interface CelebrationOverlayProps {
   problemTitle: string;
   runtime: number;
   nextSlug?: string;
+  hintsUsed?: number;
 }
 
 export function CelebrationOverlay({
@@ -20,6 +21,7 @@ export function CelebrationOverlay({
   problemTitle,
   runtime,
   nextSlug,
+  hintsUsed = 0,
 }: CelebrationOverlayProps) {
   useEffect(() => {
     if (isOpen) {
@@ -85,6 +87,13 @@ export function CelebrationOverlay({
               <div className="mt-4 px-4 py-2 rounded-xl bg-surface-secondary/70 border border-surface-border text-xs font-mono text-slate-700 dark:text-gray-300">
                 Execution speed: <span className="text-forge-cyan font-semibold">{runtime} ms</span>
               </div>
+
+              {hintsUsed === 0 && (
+                <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-mono font-bold shadow-[0_0_12px_rgba(245,158,11,0.25)]">
+                  <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Mastery: Solved with 0 hints!</span>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
