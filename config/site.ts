@@ -19,7 +19,7 @@ export const siteConfig = {
     { label: "About", href: "/about" },
   ],
   stats: {
-    problemsCount: "20+",
+    problemsCount: "3,000+",
     languagesSupported: "19 Languages",
     cost: "100% Free",
     runtimeTarget: "0ms Backend Wait",

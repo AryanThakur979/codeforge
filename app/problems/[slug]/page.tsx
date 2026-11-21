@@ -10,8 +10,11 @@ interface PageProps {
   };
 }
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  return problems.map((problem) => ({
+  // Prerender the top 30 problems at build time to keep build sub-20s
+  return problems.slice(0, 30).map((problem) => ({
     slug: problem.slug,
   }));
 }

@@ -2,7 +2,20 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, Trophy, CheckCircle2, Circle, Flame, Sparkles, Shuffle } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Trophy,
+  CheckCircle2,
+  Circle,
+  Flame,
+  Sparkles,
+  Shuffle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { problems } from "@/data/problems";
 import { ProblemCard } from "@/components/problems/ProblemCard";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
@@ -17,42 +30,53 @@ export default function ProblemsPage() {
   const [selectedTag, setSelectedTag] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | "Solved" | "Unsolved">("All");
   const [sortBy, setSortBy] = useState<"id" | "title" | "difficulty">("id");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
 
   useEffect(() => {
     setHydrated();
   }, [setHydrated]);
 
-  // Extract unique tags
+  // Reset to page 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedDifficulty, selectedTag, statusFilter, sortBy]);
+
+  // Extract unique tags (top 40 most frequent)
   const allTags = useMemo(() => {
-    const tagsSet = new Set<string>();
-    problems.forEach((p) => p.tags.forEach((t) => tagsSet.add(t)));
-    return Array.from(tagsSet).sort();
+    const tagCount: Record<string, number> = {};
+    problems.forEach((p) => {
+      p.tags.forEach((t) => {
+        tagCount[t] = (tagCount[t] || 0) + 1;
+      });
+    });
+    return Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 35)
+      .map(([tag]) => tag);
   }, []);
 
   // Filter and sort problems
   const filteredProblems = useMemo(() => {
     return problems
       .filter((p) => {
-        // Search query
         const query = search.toLowerCase();
         const matchesSearch =
           p.title.toLowerCase().includes(query) ||
           p.tags.some((t) => t.toLowerCase().includes(query)) ||
-          p.slug.toLowerCase().includes(query);
+          p.slug.toLowerCase().includes(query) ||
+          p.id.includes(query);
 
         if (!matchesSearch) return false;
 
-        // Difficulty filter
         if (selectedDifficulty !== "All" && p.difficulty !== selectedDifficulty) {
           return false;
         }
 
-        // Tag filter
         if (selectedTag !== "All" && !p.tags.includes(selectedTag)) {
           return false;
         }
 
-        // Solved status filter
         const isSolved = Boolean(solvedProblems[p.slug]);
         if (statusFilter === "Solved" && !isSolved) return false;
         if (statusFilter === "Unsolved" && isSolved) return false;
@@ -63,21 +87,51 @@ export default function ProblemsPage() {
         if (sortBy === "id") return Number(a.id) - Number(b.id);
         if (sortBy === "title") return a.title.localeCompare(b.title);
         if (sortBy === "difficulty") {
-          const rank = { Easy: 1, Medium: 2, Hard: 3 };
-          return rank[a.difficulty] - rank[b.difficulty];
+          const rank: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3 };
+          return (rank[a.difficulty] || 2) - (rank[b.difficulty] || 2);
         }
         return 0;
       });
   }, [search, selectedDifficulty, selectedTag, statusFilter, sortBy, solvedProblems]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredProblems.length / pageSize));
+
+  // Current page slice
+  const paginatedProblems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProblems.slice(start, start + pageSize);
+  }, [filteredProblems, currentPage, pageSize]);
+
   const solvedCount = Object.keys(solvedProblems).length;
   const totalCount = problems.length;
-  const progressPercent = Math.round((solvedCount / totalCount) * 100);
+  const progressPercent = Math.min(100, Math.round((solvedCount / totalCount) * 100));
 
   const handlePickRandom = () => {
     const randomIndex = Math.floor(Math.random() * problems.length);
     router.push(`/problems/${problems[randomIndex].slug}`);
   };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 320, behavior: "smooth" });
+  };
+
+  // Generate page numbers to display
+  const pageNumbers = useMemo(() => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [currentPage, totalPages]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -88,13 +142,13 @@ export default function ProblemsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forge-cyan/10 border border-forge-cyan/30 text-forge-cyan text-xs font-mono uppercase tracking-wider">
-              Problem Directory • {totalCount} Handcrafted Challenges
+              Problem Directory • {totalCount.toLocaleString()} Coding Challenges
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
               Algorithmic Problem Archive
             </h1>
             <p className="text-sm text-gray-400 max-w-xl">
-              Sharpen your intuition across foundational data structures and patterns. Instant in-browser testing, 0ms backend latency.
+              Sharpen your intuition across 3,000+ data structure & algorithm patterns. Full 19-language support with instant execution.
             </p>
           </div>
 
@@ -104,7 +158,7 @@ export default function ProblemsPage() {
               <div className="flex items-center gap-2 mb-1">
                 <Trophy className="w-4 h-4 text-forge-amber" />
                 <span className="text-sm font-semibold text-white">
-                  {solvedCount} / {totalCount} Solved
+                  {solvedCount} / {totalCount.toLocaleString()} Solved
                 </span>
                 <span className="text-xs text-forge-cyan font-mono">({progressPercent}%)</span>
               </div>
@@ -137,7 +191,7 @@ export default function ProblemsPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search problems, topics, keywords..."
+              placeholder="Search 3,000+ problems, topics, keywords..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface border border-surface-border text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-forge-cyan/60 focus:ring-1 focus:ring-forge-cyan/60 transition-all shadow-sm"
             />
           </div>
@@ -193,22 +247,22 @@ export default function ProblemsPage() {
 
         {/* Topic Tag Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-xs">
-          <span className="text-gray-500 font-mono text-[11px] uppercase mr-1">Topics:</span>
+          <span className="text-gray-500 font-mono text-[11px] uppercase mr-1 shrink-0">Popular Topics:</span>
           <button
             onClick={() => setSelectedTag("All")}
-            className={`px-3 py-1 rounded-lg font-mono text-xs whitespace-nowrap transition-all ${
+            className={`px-3 py-1 rounded-lg font-mono text-xs whitespace-nowrap transition-all shrink-0 ${
               selectedTag === "All"
                 ? "bg-forge-cyan/15 text-forge-cyan border border-forge-cyan/30 font-semibold"
                 : "bg-surface/60 text-gray-400 border border-surface-border hover:text-white"
             }`}
           >
-            All Topics
+            All Topics ({totalCount})
           </button>
           {allTags.map((tag) => (
             <button
               key={tag}
               onClick={() => setSelectedTag(tag === selectedTag ? "All" : tag)}
-              className={`px-3 py-1 rounded-lg font-mono text-xs whitespace-nowrap transition-all ${
+              className={`px-3 py-1 rounded-lg font-mono text-xs whitespace-nowrap transition-all shrink-0 ${
                 selectedTag === tag
                   ? "bg-forge-cyan/15 text-forge-cyan border border-forge-cyan/30 font-semibold"
                   : "bg-surface/60 text-gray-400 border border-surface-border hover:text-white"
@@ -218,6 +272,14 @@ export default function ProblemsPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Problems Counter Bar */}
+      <div className="flex items-center justify-between text-xs font-mono text-gray-400 px-1">
+        <span>
+          Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredProblems.length)} of {filteredProblems.length.toLocaleString()} problems
+        </span>
+        <span>Page {currentPage} of {totalPages}</span>
       </div>
 
       {/* Problems List / Cards */}
@@ -243,7 +305,7 @@ export default function ProblemsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {filteredProblems.map((prob, idx) => (
+            {paginatedProblems.map((prob, idx) => (
               <ProblemCard
                 key={prob.id}
                 problem={prob}
@@ -254,6 +316,75 @@ export default function ProblemsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pt-6 border-t border-surface-border flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-xs font-mono text-gray-400">
+            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredProblems.length)} of {filteredProblems.length.toLocaleString()} problems
+          </div>
+
+          <div className="flex items-center gap-1.5 font-mono text-xs">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              title="First Page"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              title="Previous Page"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {pageNumbers.map((p, i) =>
+                typeof p === "number" ? (
+                  <button
+                    key={p}
+                    onClick={() => handlePageChange(p)}
+                    className={`min-w-[36px] h-9 px-2.5 rounded-lg font-medium transition-all ${
+                      currentPage === p
+                        ? "bg-forge-cyan text-background font-bold shadow-neon-cyan"
+                        : "bg-surface/60 border border-surface-border text-gray-300 hover:text-white hover:bg-surface-secondary"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ) : (
+                  <span key={`dots-${i}`} className="px-2 text-gray-500">
+                    ...
+                  </span>
+                )
+              )}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              title="Next Page"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              title="Last Page"
+              className="p-2 rounded-lg bg-surface/60 border border-surface-border text-gray-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

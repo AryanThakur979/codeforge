@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { siteConfig } from "@/config/site";
 
 const stats = [
-  { value: "20+", label: "Handcrafted Problems", sub: "Beginner to Medium" },
+  { value: "3,000+", label: "Algorithmic Challenges", sub: "Easy, Medium & Hard" },
   { value: "100%", label: "Free Forever", sub: "No Credit Card Needed" },
   { value: "< 5ms", label: "Browser Execution", sub: "Sandboxed Web Workers" },
   { value: "0", label: "External Tracking", sub: "100% Privacy Preserving" },

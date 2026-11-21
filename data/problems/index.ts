@@ -1,6 +1,6 @@
 import { Problem } from "@/types/problem";
 
-export const problems: Problem[] = [
+export const premierProblems: Problem[] = [
   {
     id: "1",
     slug: "target-pair-sum",
@@ -1125,8 +1125,95 @@ function maxProfit(prices) {
   },
 ];
 
+import catalogData from "./problemsCatalog.json";
+import detailsData from "./problemsDetails.json";
+
+const premierMap = new Map<string, Problem>(premierProblems.map((p) => [p.slug, p]));
+
+export const problems: Problem[] = (
+  catalogData as Array<{
+    id: string;
+    slug: string;
+    title: string;
+    difficulty: any;
+    tags: string[];
+  }>
+).map((item) => {
+  const premier = premierMap.get(item.slug);
+  if (premier) return premier;
+
+  return {
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    difficulty: item.difficulty,
+    tags: item.tags,
+    description: "",
+    examples: [],
+    constraints: [],
+    hints: [],
+    functionName: item.slug.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase()),
+    starterCode: {
+      javascript: "",
+      python: "",
+    },
+    testCases: [],
+  };
+});
+
+const detailsMap = detailsData as Record<
+  string,
+  {
+    id: string;
+    slug: string;
+    title: string;
+    difficulty: any;
+    tags: string[];
+    description: string;
+    functionName: string;
+  }
+>;
+
 export function getProblemBySlug(slug: string): Problem | undefined {
-  return problems.find((p) => p.slug === slug);
+  const premier = premierMap.get(slug);
+  if (premier) return premier;
+
+  const detail = detailsMap[slug];
+  if (!detail) return undefined;
+
+  const fnName = detail.functionName || slug.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+
+  return {
+    id: detail.id,
+    slug: detail.slug,
+    title: detail.title,
+    difficulty: detail.difficulty,
+    tags: detail.tags,
+    description: detail.description,
+    examples: [
+      {
+        id: 1,
+        input: "Refer to the problem description for format & constraints.",
+        output: "Valid result matching problem specifications.",
+      },
+    ],
+    constraints: [
+      "Optimal time and space complexity required.",
+      "Handle all edge cases and boundary conditions.",
+    ],
+    hints: [
+      "Analyze the problem constraints to choose the best algorithm and data structure.",
+    ],
+    functionName: fnName,
+    starterCode: {
+      javascript: `/**\n * @return {any}\n */\nvar ${fnName} = function(...args) {\n    // Your code here\n};\n`,
+      python: `def ${fnName}(*args):\n    # Your code here\n    pass\n`,
+    },
+    testCases: [
+      { id: 1, input: [], expected: true, isHidden: false },
+      { id: 2, input: [], expected: true, isHidden: true },
+    ],
+  };
 }
 
 export function getAllProblems(): Problem[] {
