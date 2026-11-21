@@ -6,6 +6,8 @@ import { SubmissionRecord } from "@/store/useCodeForgeStore";
 import { CheckCircle2, XCircle, Clock, AlertTriangle, Eye, X, Terminal } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 
+import { LEETCODE_LANGUAGES } from "@/types/problem";
+
 interface SubmissionsTableProps {
   submissions: SubmissionRecord[];
 }
@@ -81,19 +83,7 @@ export function SubmissionsTable({ submissions }: SubmissionsTableProps) {
                   </td>
                   <td className="py-3 px-4 text-gray-300">
                     <span className="px-2 py-0.5 rounded-md bg-surface-secondary border border-surface-border text-[11px] font-mono font-medium text-forge-cyan">
-                      {sub.language === "cpp"
-                        ? "C++"
-                        : sub.language === "javascript"
-                        ? "JavaScript"
-                        : sub.language === "typescript"
-                        ? "TypeScript"
-                        : sub.language === "python"
-                        ? "Python 3"
-                        : sub.language === "java"
-                        ? "Java"
-                        : sub.language === "c"
-                        ? "C"
-                        : sub.language}
+                      {LEETCODE_LANGUAGES.find((l) => l.id === sub.language)?.name || sub.language}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-gray-300">{formatTime(sub.runtime)}</td>

@@ -6,6 +6,9 @@ import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { cpp } from "@codemirror/lang-cpp";
 import { java } from "@codemirror/lang-java";
+import { rust } from "@codemirror/lang-rust";
+import { go } from "@codemirror/lang-go";
+import { php } from "@codemirror/lang-php";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
 import { SupportedLanguage } from "@/types/problem";
@@ -47,12 +50,19 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
         exts.push(javascript({ jsx: false, typescript: false }));
       } else if (language === "typescript") {
         exts.push(javascript({ jsx: false, typescript: true }));
-      } else if (language === "python") {
+      } else if (language === "python" || language === "python3") {
         exts.push(python());
-      } else if (language === "cpp" || language === "c") {
-        exts.push(cpp());
       } else if (language === "java") {
         exts.push(java());
+      } else if (language === "rust") {
+        exts.push(rust());
+      } else if (language === "go") {
+        exts.push(go());
+      } else if (language === "php") {
+        exts.push(php());
+      } else {
+        // C++, C, C#, Kotlin, Swift, Dart, Scala, etc.
+        exts.push(cpp());
       }
       return exts;
     }, [language]);

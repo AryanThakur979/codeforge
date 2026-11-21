@@ -61,7 +61,6 @@ export function buildCppSource(
   functionName: string,
   testCases: TestCaseInput[]
 ): string {
-  // If user provided a complete program with main(), run directly
   if (/\bint\s+main\s*\(/.test(userCode)) {
     return userCode;
   }
@@ -257,4 +256,42 @@ ${testCalls}
 `;
 
   return `${userCode}\n${harness}`;
+}
+
+export function buildPythonSource(
+  userCode: string,
+  functionName: string,
+  testCases: TestCaseInput[]
+): string {
+  if (/__name__\s*==\s*['"]__main__['"]/.test(userCode)) {
+    return userCode;
+  }
+
+  return `
+import json
+import sys
+
+${userCode}
+
+def _run_harness():
+    print("__CODEFORGE_START__")
+    cases = json.loads('''${JSON.stringify(testCases)}''')
+    for tc in cases:
+        try:
+            fn = globals().get("${functionName}")
+            if not fn and "Solution" in globals():
+                sol = globals()["Solution"]()
+                fn = getattr(sol, "${functionName}", None)
+            if fn:
+                res = fn(*tc["input"])
+                print(f"__TC_{tc['id']}__{json.dumps(res)}")
+            else:
+                print(f"__TC_{tc['id']}__EXCEPTION: Function not found")
+        except Exception as e:
+            print(f"__TC_{tc['id']}__EXCEPTION: {e}")
+    print("__CODEFORGE_END__")
+
+if __name__ == "__main__":
+    _run_harness()
+`;
 }

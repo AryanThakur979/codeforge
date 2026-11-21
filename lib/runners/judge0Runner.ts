@@ -1,13 +1,14 @@
 import { CodeRunner, RunnerResponse, TestCaseInput } from "./types";
+import { SupportedLanguage } from "@/types/problem";
 
 export class Judge0Runner implements CodeRunner {
-  private language: "cpp" | "java" | "c" | "typescript";
+  private language: SupportedLanguage;
 
-  constructor(language: "cpp" | "java" | "c" | "typescript") {
+  constructor(language: SupportedLanguage = "cpp") {
     this.language = language;
   }
 
-  setLanguage(lang: "cpp" | "java" | "c" | "typescript") {
+  setLanguage(lang: SupportedLanguage) {
     this.language = lang;
   }
 
@@ -60,7 +61,7 @@ export class Judge0Runner implements CodeRunner {
           totalRuntime: timeoutMs,
           allPassed: false,
           logs: [],
-          errorSummary: "Request timed out: Server or compiler did not respond within 15 seconds.",
+          errorSummary: "Request timed out: Cloud compiler did not respond within 15 seconds.",
         };
       }
 

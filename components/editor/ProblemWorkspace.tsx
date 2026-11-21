@@ -17,9 +17,10 @@ import {
   Sparkles,
   ChevronDown,
   CheckCircle2,
+  Check,
   Cpu,
   Loader2,
-  Terminal,
+  Code2,
 } from "lucide-react";
 import { getProblemBySlug, problems } from "@/data/problems";
 import { DifficultyBadge } from "@/components/problems/DifficultyBadge";
@@ -33,7 +34,7 @@ import { tsRunner } from "@/lib/runners/typescriptRunner";
 import { pythonRunner, PyodideStatus } from "@/lib/runners/pythonRunner";
 import { judge0Runner } from "@/lib/runners/judge0Runner";
 import { RunnerResponse } from "@/lib/runners/types";
-import { SUPPORTED_LANGUAGES, SupportedLanguage } from "@/types/problem";
+import { LEETCODE_LANGUAGES, SupportedLanguage } from "@/types/problem";
 import { getStarterCode } from "@/lib/codeTemplates";
 
 interface ProblemWorkspaceProps {
@@ -55,7 +56,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   } = useCodeForgeStore();
 
   // Local component states
-  const [language, setLanguage] = useState<SupportedLanguage>("javascript");
+  const [language, setLanguage] = useState<SupportedLanguage>("cpp");
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [code, setCode] = useState<string>("");
   const [mobileTab, setMobileTab] = useState<"description" | "editor" | "results">("description");
   const [isRunning, setIsRunning] = useState(false);
@@ -67,10 +69,26 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   const [pyodideStatus, setPyodideStatus] = useState<PyodideStatus>("idle");
 
   const editorRef = useRef<CodeEditorHandle>(null);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHydrated();
   }, [setHydrated]);
+
+  // Close language dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setLangDropdownOpen(false);
+      }
+    }
+    if (langDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [langDropdownOpen]);
 
   // Pyodide status listener
   useEffect(() => {
@@ -80,9 +98,9 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     return unsubscribe;
   }, []);
 
-  // When switching to Python, preload Pyodide lazily
+  // When switching to Python3, preload Pyodide lazily
   useEffect(() => {
-    if (language === "python") {
+    if (language === "python3") {
       pythonRunner.preload();
     }
   }, [language]);
@@ -151,10 +169,10 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
       return await jsRunner.run(code, problem.functionName, testCasesToRun);
     } else if (language === "typescript") {
       return await tsRunner.run(code, problem.functionName, testCasesToRun);
-    } else if (language === "python") {
+    } else if (language === "python3") {
       return await pythonRunner.run(code, problem.functionName, testCasesToRun);
     } else {
-      judge0Runner.setLanguage(language as "cpp" | "java" | "c");
+      judge0Runner.setLanguage(language);
       return await judge0Runner.run(code, problem.functionName, testCasesToRun);
     }
   };
@@ -219,7 +237,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   };
 
   const isSolved = Boolean(solvedProblems[problem.slug]);
-  const currentLangMeta = SUPPORTED_LANGUAGES.find((l) => l.id === language);
+  const currentLangMeta = LEETCODE_LANGUAGES.find((l) => l.id === language);
+
+  const col1 = LEETCODE_LANGUAGES.filter((l) => l.column === 1);
+  const col2 = LEETCODE_LANGUAGES.filter((l) => l.column === 2);
+  const col3 = LEETCODE_LANGUAGES.filter((l) => l.column === 3);
 
   return (
     <div
@@ -421,26 +443,108 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           }`}
         >
           {/* Editor Header Bar */}
-          <div className="border-b border-surface-border bg-surface/90 px-4 py-2 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono uppercase text-gray-400 hidden sm:inline">
-                Language:
+          <div className="border-b border-surface-border bg-surface/90 px-4 py-2 flex flex-wrap items-center justify-between gap-3 relative z-30">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] font-mono uppercase text-gray-500 hidden sm:inline flex items-center gap-1">
+                <Code2 className="w-3.5 h-3.5 text-forge-cyan" />
+                <span>Code</span>
               </span>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
-                aria-label="Select programming language"
-                className="py-1 px-2.5 rounded-lg bg-surface-secondary border border-surface-border text-xs font-mono font-semibold text-forge-cyan focus:outline-none focus:border-forge-cyan/50 cursor-pointer shadow-sm"
-              >
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.id} value={lang.id} className="bg-surface text-white">
-                    {lang.name}
-                  </option>
-                ))}
-              </select>
+
+              {/* LeetCode-style 3-Column Language Selector Dropdown */}
+              <div className="relative" ref={langDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setLangDropdownOpen((prev) => !prev)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary border border-surface-border hover:border-forge-cyan/50 text-xs font-mono font-semibold text-white hover:text-forge-cyan transition-all shadow-sm"
+                >
+                  <span>{currentLangMeta?.name || "C++"}</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-gray-400 transition-transform ${
+                      langDropdownOpen ? "rotate-180 text-forge-cyan" : ""
+                    }`}
+                  />
+                </button>
+
+                {/* Floating LeetCode-style 3-Column Menu */}
+                {langDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 z-50 w-[280px] sm:w-[460px] p-2.5 rounded-2xl bg-[#090e1c] border border-surface-border shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-1.5 max-h-[420px] overflow-y-auto">
+                    {/* Column 1 */}
+                    <div className="space-y-0.5 sm:border-r border-surface-border/50 sm:pr-1.5">
+                      {col1.map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => {
+                            setLanguage(l.id);
+                            setLangDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
+                            language === l.id
+                              ? "bg-forge-cyan/15 text-forge-cyan font-bold"
+                              : "text-gray-300 hover:text-white hover:bg-surface-secondary/70"
+                          }`}
+                        >
+                          <span>{l.name}</span>
+                          {language === l.id && (
+                            <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Column 2 */}
+                    <div className="space-y-0.5 sm:border-r border-surface-border/50 sm:pr-1.5">
+                      {col2.map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => {
+                            setLanguage(l.id);
+                            setLangDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
+                            language === l.id
+                              ? "bg-forge-cyan/15 text-forge-cyan font-bold"
+                              : "text-gray-300 hover:text-white hover:bg-surface-secondary/70"
+                          }`}
+                        >
+                          <span>{l.name}</span>
+                          {language === l.id && (
+                            <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Column 3 */}
+                    <div className="space-y-0.5">
+                      {col3.map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => {
+                            setLanguage(l.id);
+                            setLangDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
+                            language === l.id
+                              ? "bg-forge-cyan/15 text-forge-cyan font-bold"
+                              : "text-gray-300 hover:text-white hover:bg-surface-secondary/70"
+                          }`}
+                        >
+                          <span>{l.name}</span>
+                          {language === l.id && (
+                            <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Status / Runtime Badge */}
-              {language === "python" ? (
+              {language === "python3" ? (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-secondary border border-surface-border text-[11px] font-mono">
                   {pyodideStatus === "loading" ? (
                     <>
@@ -464,15 +568,15 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                     </>
                   )}
                 </div>
-              ) : language === "cpp" || language === "c" || language === "java" ? (
-                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Cloud Compiler Ready</span>
-                </div>
-              ) : (
+              ) : language === "javascript" || language === "typescript" ? (
                 <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-mono text-cyan-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                   <span>0ms Sandbox Ready</span>
+                </div>
+              ) : (
+                <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Cloud Compiler Ready</span>
                 </div>
               )}
             </div>

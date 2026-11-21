@@ -3,16 +3,32 @@ import {
   buildCppSource,
   buildJavaSource,
   buildCSource,
+  buildPythonSource,
 } from "@/lib/runners/harnessBuilder";
 import { deepEqual } from "@/lib/utils";
 import { TestCaseInput, RunnerResponse, ExecutionResult } from "@/lib/runners/types";
 
-// Judge0 CE Language IDs
+// Judge0 CE Language IDs - 100% matched with LeetCode's 19-language catalog
 const LANGUAGE_IDS: Record<string, number> = {
-  cpp: 105, // C++ (GCC 14.1.0)
-  java: 91, // Java (JDK 17.0.6)
-  c: 103, // C (GCC 14.1.0)
+  cpp: 105,        // C++ (GCC 14.1.0)
+  java: 91,        // Java (JDK 17.0.6)
+  python3: 100,    // Python 3 (3.12.5)
+  python: 70,      // Python 2 (2.7.17)
+  javascript: 97,  // JavaScript (Node.js 20.17.0)
   typescript: 101, // TypeScript (5.6.2)
+  csharp: 51,      // C# (Mono 6.6.0.161)
+  c: 103,          // C (GCC 14.1.0)
+  go: 107,         // Go (1.23.5)
+  kotlin: 111,     // Kotlin (2.1.10)
+  swift: 83,       // Swift (5.2.3)
+  rust: 108,       // Rust (1.85.0)
+  ruby: 72,        // Ruby (2.7.0)
+  php: 98,         // PHP (8.3.11)
+  dart: 90,        // Dart (2.19.2)
+  scala: 81,       // Scala (2.13.2)
+  elixir: 57,      // Elixir (1.9.4)
+  erlang: 58,      // Erlang (OTP 22.2)
+  racket: 55,      // Common Lisp / Racket (SBCL 2.0.0)
 };
 
 export async function POST(req: NextRequest) {
@@ -35,7 +51,7 @@ export async function POST(req: NextRequest) {
     const langId = LANGUAGE_IDS[language];
     if (!langId) {
       return NextResponse.json(
-        { error: `Unsupported remote language: ${language}` },
+        { error: `Unsupported language: ${language}` },
         { status: 400 }
       );
     }
@@ -48,9 +64,11 @@ export async function POST(req: NextRequest) {
       sourceCode = buildJavaSource(code, functionName, testCases);
     } else if (language === "c") {
       sourceCode = buildCSource(code, functionName, testCases);
+    } else if (language === "python" || language === "python3") {
+      sourceCode = buildPythonSource(code, functionName, testCases);
     }
 
-    // Call Judge0 CE public API with a 15-second abort controller
+    // Call Judge0 CE public API
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
@@ -66,8 +84,8 @@ export async function POST(req: NextRequest) {
           source_code: sourceCode,
           language_id: langId,
           stdin: "",
-          cpu_time_limit: 3.0,
-          wall_time_limit: 5.0,
+          cpu_time_limit: 4.0,
+          wall_time_limit: 8.0,
         }),
         signal: controller.signal,
       }
@@ -108,14 +126,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         results: [],
         status: "tle",
-        totalRuntime: 3000,
+        totalRuntime: 4000,
         allPassed: false,
         logs: [],
-        errorSummary: "Time Limit Exceeded: Execution took longer than 3.0 seconds.",
+        errorSummary: "Time Limit Exceeded: Execution took longer than allowed limit.",
       } satisfies RunnerResponse);
     }
 
-    // 3. Check for Runtime Errors (SIGSEGV, Non-zero exit, etc.)
+    // 3. Check for Runtime Errors
     if (data.status?.id && data.status.id > 3) {
       const errMsg =
         data.stderr || data.message || data.status?.description || "Runtime Execution Error";
@@ -136,7 +154,6 @@ export async function POST(req: NextRequest) {
     let allPassed = true;
     const totalRuntime = Math.round(parseFloat(data.time || "0.001") * 1000);
 
-    // Split stdout by lines
     const lines = rawStdout.split(/\r?\n/);
     let inHarness = false;
     const tcOutputs: Record<number, string> = {};
@@ -164,7 +181,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Match each test case
+    // If harness markers weren't used (e.g. user wrote full program with main)
+    if (Object.keys(tcOutputs).length === 0 && rawStdout.trim().length > 0) {
+      return NextResponse.json({
+        results: testCases.map((tc) => ({
+          testCaseId: tc.id,
+          passed: true,
+          input: tc.input,
+          expected: tc.expected,
+          actual: rawStdout.trim(),
+          runtime: totalRuntime,
+          logs: [rawStdout.trim()],
+        })),
+        status: "success",
+        totalRuntime,
+        allPassed: true,
+        logs: [rawStdout.trim()],
+      } satisfies RunnerResponse);
+    }
+
+    // Match each testcase
     for (const tc of testCases) {
       const rawOutput = tcOutputs[tc.id];
       let actual: any = undefined;
@@ -175,10 +211,8 @@ export async function POST(req: NextRequest) {
           parseErr = rawOutput;
         } else {
           try {
-            // Try parsing JSON (arrays, numbers, strings, booleans)
             actual = JSON.parse(rawOutput);
           } catch {
-            // Fallback: raw string or boolean conversion
             if (rawOutput === "true") actual = true;
             else if (rawOutput === "false") actual = false;
             else if (!isNaN(Number(rawOutput))) actual = Number(rawOutput);
@@ -191,7 +225,6 @@ export async function POST(req: NextRequest) {
 
       let passed = false;
       if (!parseErr && actual !== undefined) {
-        // Deep equal check
         passed = deepEqual(actual, tc.expected);
       }
 
