@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getProblemBySlug } from "@/data/problems";
-import { MentorMode, HintLanguage } from "@/types/problem";
+import { MentorMode, HintLanguage, AIHintFailureReason } from "@/types/problem";
 
 export const runtime = "nodejs";
 
@@ -31,7 +31,10 @@ function getClientIpHash(req: NextRequest): string {
   return crypto.createHash("sha256").update(rawIp + IP_HASH_SALT).digest("hex");
 }
 
-function checkRateLimits(ipHash: string, globalLimit: number): { allowed: boolean; reason?: string } {
+function checkRateLimits(
+  ipHash: string,
+  globalLimit: number
+): { allowed: boolean; reasonCode?: "limit_reached"; message?: string } {
   const now = Date.now();
 
   // Reset global count if day expired
@@ -40,10 +43,15 @@ function checkRateLimits(ipHash: string, globalLimit: number): { allowed: boolea
     globalDayResetAt = now + 86400000;
   }
 
-  if (globalDailyCount >= globalLimit) {
+  const effectiveGlobalLimit = Math.max(globalLimit, 1);
+  if (globalDailyCount >= effectiveGlobalLimit) {
+    console.info(
+      `[AI Hint RateLimit] Global daily limit of ${effectiveGlobalLimit} reached (count=${globalDailyCount}).`
+    );
     return {
       allowed: false,
-      reason: "Global daily AI hint quota reached. Showing handcrafted built-in hint.",
+      reasonCode: "limit_reached",
+      message: "Global daily AI hint quota reached. Showing handcrafted built-in hint.",
     };
   }
 
@@ -70,25 +78,35 @@ function checkRateLimits(ipHash: string, globalLimit: number): { allowed: boolea
     usage.dayResetAt = now + 86400000;
   }
 
-  if (usage.minuteCount >= 3) {
+  // Generous per-visitor limit: up to 6 per minute, 25 per day (allows smooth 1-4 ladder progression)
+  if (usage.minuteCount >= 6) {
+    console.info(`[AI Hint RateLimit] Visitor minute rate limit reached (count=${usage.minuteCount}).`);
     return {
       allowed: false,
-      reason: "You are requesting hints too quickly (max 3/min). Here is a built-in hint while you think.",
+      reasonCode: "limit_reached",
+      message: "You are requesting hints too quickly. Here is a built-in hint while you think.",
     };
   }
 
-  if (usage.dayCount >= 15) {
+  if (usage.dayCount >= 25) {
+    console.info(`[AI Hint RateLimit] Visitor daily limit reached (count=${usage.dayCount}).`);
     return {
       allowed: false,
-      reason: "You have used your 15 AI hints for today. Here is a handcrafted built-in hint.",
+      reasonCode: "limit_reached",
+      message: "You have used your daily AI hints. Here is a handcrafted built-in hint.",
     };
   }
-
-  usage.minuteCount += 1;
-  usage.dayCount += 1;
-  globalDailyCount += 1;
 
   return { allowed: true };
+}
+
+function commitRateLimitUsage(ipHash: string) {
+  const usage = visitorLimits.get(ipHash);
+  if (usage) {
+    usage.minuteCount += 1;
+    usage.dayCount += 1;
+  }
+  globalDailyCount += 1;
 }
 
 function getPersonaInstructions(mode: MentorMode, language: HintLanguage): string {
@@ -123,30 +141,206 @@ Be genuinely warm, encouraging, and clear.`;
 Speak in clear, positive, conversational English. Be inspiring, kind, and pedagogically sharp.`;
 }
 
-function validateAndSanitizeOutput(reply: string, level: number, fallbackStaticHint: string): string {
-  if (!reply || typeof reply !== "string") return fallbackStaticHint;
+interface GuardResult {
+  valid: boolean;
+  sanitized: string;
+  rejectionReason?: "guard" | "parse";
+}
+
+/**
+ * Output guard: Ensures model completion is non-empty, and does not leak a complete
+ * working code solution without blanks.
+ *
+ * NOTE: The presence of the English word "function" or "def" in explanatory prose
+ * is completely valid and must NOT be rejected.
+ */
+function validateAndSanitizeOutput(reply: string, level: number): GuardResult {
+  if (!reply || typeof reply !== "string") {
+    return { valid: false, sanitized: "", rejectionReason: "parse" };
+  }
 
   const trimmed = reply.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, sanitized: "", rejectionReason: "parse" };
+  }
 
-  // For Level 1, 2, 3: Must NOT contain fenced code blocks
+  // For Levels 1, 2, 3: Must NOT contain full runnable multi-line code solutions
   if (level < 4) {
-    if (trimmed.includes("```") || trimmed.includes("function ") || trimmed.includes("def ")) {
-      // If the model leaked code in level 1, 2, 3, return static hint for safety
-      return fallbackStaticHint;
+    const codeBlockMatch = trimmed.match(/```(?:[a-z]*\n)?([\s\S]+?)```/i);
+    if (codeBlockMatch) {
+      const codeInside = codeBlockMatch[1];
+      const lines = codeInside.split("\n").filter((l) => l.trim().length > 0);
+      const isFullCodeSolution =
+        lines.length > 3 &&
+        (codeInside.includes("return ") || codeInside.includes("return\n")) &&
+        (codeInside.includes("for ") || codeInside.includes("while ") || codeInside.includes("if ")) &&
+        !codeInside.includes("____");
+
+      if (isFullCodeSolution) {
+        console.warn(
+          `[AI Hint Guard] Level ${level} completion contained a full code solution block without blanks. Rejecting.`
+        );
+        return { valid: false, sanitized: "", rejectionReason: "guard" };
+      }
     }
   }
 
   // For Level 4: Partial pseudocode with blanks (____) only.
-  // If the reply contains a complete working code block (>8 lines without blanks), reject it.
+  // If the reply contains a complete working code block (>4 lines without blanks), reject it.
   if (level === 4) {
     const hasCodeBlock = trimmed.includes("```");
-    const hasBlanks = trimmed.includes("____") || trimmed.includes("/* TODO");
+    const hasBlanks = trimmed.includes("____") || trimmed.includes("/* TODO") || trimmed.includes("...");
     if (hasCodeBlock && !hasBlanks) {
-      return fallbackStaticHint;
+      const codeBlockMatch = trimmed.match(/```(?:[a-z]*\n)?([\s\S]+?)```/i);
+      const codeInside = codeBlockMatch ? codeBlockMatch[1] : trimmed;
+      const lines = codeInside.split("\n").filter((l) => l.trim().length > 0);
+      if (
+        lines.length > 4 &&
+        (codeInside.includes("return ") || codeInside.includes("return\n"))
+      ) {
+        console.warn(
+          `[AI Hint Guard] Level 4 completion contained complete code without blanks (____). Rejecting.`
+        );
+        return { valid: false, sanitized: "", rejectionReason: "guard" };
+      }
     }
   }
 
-  return trimmed;
+  return { valid: true, sanitized: trimmed };
+}
+
+interface FetchResult {
+  ok: boolean;
+  content: string;
+  reason?: AIHintFailureReason;
+  httpStatus?: number;
+}
+
+/**
+ * Calls OpenAI-compatible Chat Completions endpoint with safe logging,
+ * timeout guard, status code & error inspection, and single retry for transient failures.
+ */
+async function callAIProvider(
+  endpoint: string,
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  attempt = 1
+): Promise<FetchResult> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 380,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    const rawBody = await response.text();
+    const truncatedBody = rawBody.slice(0, 300).replace(/[\r\n\t]+/g, " ");
+
+    if (!response.ok) {
+      console.error(
+        `[AI Hint Provider Error] Attempt ${attempt}: HTTP ${response.status} ${response.statusText} from ${endpoint}. Body: ${truncatedBody}`
+      );
+
+      let reason: AIHintFailureReason = "provider_error";
+
+      if (response.status === 401 || response.status === 403) {
+        reason = "auth";
+        console.error(
+          `[AI Hint Auth Error] Authentication failed (HTTP ${response.status}). Check AI_API_KEY in your Vercel environment variables.`
+        );
+      } else if (
+        response.status === 404 ||
+        /model_not_found|does not exist|not found|decommissioned|deprecated|invalid model/i.test(rawBody)
+      ) {
+        reason = "model";
+        console.error(
+          `[AI Hint Model Error] Model "${model}" was not found or is retired/decommissioned at ${endpoint}. Check AI_MODEL in your Vercel environment variables.`
+        );
+      } else if (response.status === 429 || /rate_limit|quota|tokens/i.test(rawBody)) {
+        reason = "rate_limit";
+        console.warn(`[AI Hint RateLimit] Provider rate limit / quota exceeded (HTTP 429).`);
+      }
+
+      // Retry once ONLY on transient errors (429 or 5xx)
+      if (attempt === 1 && (response.status === 429 || response.status >= 500)) {
+        console.info(
+          `[AI Hint Retry] Transient provider status (${response.status}). Retrying once after 800ms...`
+        );
+        await new Promise((r) => setTimeout(r, 800));
+        return callAIProvider(endpoint, apiKey, model, messages, 2);
+      }
+
+      return { ok: false, content: "", reason, httpStatus: response.status };
+    }
+
+    // Parse JSON
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      console.error(
+        `[AI Hint JSON Parse Error] Failed to parse provider response JSON. Raw snippet: ${truncatedBody}`
+      );
+      return { ok: false, content: "", reason: "parse", httpStatus: response.status };
+    }
+
+    // Extract completion content safely
+    let content = "";
+    const choice = parsed?.choices?.[0];
+    if (choice) {
+      if (typeof choice.message?.content === "string") {
+        content = choice.message.content;
+      } else if (Array.isArray(choice.message?.content)) {
+        content = choice.message.content.map((c: any) => c?.text || "").join("");
+      } else if (typeof choice.text === "string") {
+        content = choice.text;
+      }
+    }
+
+    if (!content || !content.trim()) {
+      console.error(
+        `[AI Hint Empty Completion] Provider returned empty completion text. Choices count: ${
+          parsed?.choices?.length ?? 0
+        }`
+      );
+      return { ok: false, content: "", reason: "parse", httpStatus: response.status };
+    }
+
+    return { ok: true, content: content.trim(), httpStatus: response.status };
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+
+    if (err?.name === "AbortError") {
+      console.error(`[AI Hint Timeout] Request timed out after 15s to ${endpoint} with model "${model}".`);
+      return { ok: false, content: "", reason: "timeout" };
+    }
+
+    console.error(`[AI Hint Request Error] Fetch network failure: ${err?.message || err}`);
+
+    // Retry once on network glitch
+    if (attempt === 1) {
+      console.info(`[AI Hint Retry] Retrying once after network failure...`);
+      await new Promise((r) => setTimeout(r, 800));
+      return callAIProvider(endpoint, apiKey, model, messages, 2);
+    }
+
+    return { ok: false, content: "", reason: "provider_error" };
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -185,14 +379,19 @@ export async function POST(req: NextRequest) {
       staticHints[staticHints.length - 1] ||
       "Think about the invariant and constraints: which data structure allows you to avoid repeated scans?";
 
-    // Read server environment variables
-    const apiKey = process.env.AI_API_KEY?.trim() || "";
-    const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
-    const model = process.env.AI_MODEL?.trim() || "llama-3.3-70b-versatile";
-    const dailyLimit = parseInt(process.env.AI_DAILY_LIMIT || "500", 10) || 500;
+    // Read and sanitize server environment variables
+    const apiKey = (process.env.AI_API_KEY || "").trim().replace(/^["']|["']$/g, "");
+    const rawBaseUrl = (process.env.AI_BASE_URL || "https://api.groq.com/openai/v1")
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .replace(/\/+$/, "");
+    const endpoint = rawBaseUrl.endsWith("/chat/completions") ? rawBaseUrl : `${rawBaseUrl}/chat/completions`;
+    const model = (process.env.AI_MODEL || "").trim().replace(/^["']|["']$/g, "") || "llama-3.3-70b-versatile";
+    const dailyLimit = Math.max(parseInt(process.env.AI_DAILY_LIMIT || "500", 10) || 500, 1);
 
     // Graceful degradation when AI_API_KEY is missing
     if (!apiKey) {
+      console.info("[AI Hint Config] AI_API_KEY is missing. Serving static hint fallback.");
       return NextResponse.json({
         hint: staticFallbackHint,
         level,
@@ -200,6 +399,7 @@ export async function POST(req: NextRequest) {
         source: "static",
         isFallback: true,
         fallbackReason: "AI hints are resting for today, here is a built-in hint.",
+        reason: "missing_key",
       });
     }
 
@@ -230,9 +430,10 @@ export async function POST(req: NextRequest) {
           totalHints: 4,
           source: "static",
           isFallback: true,
-          fallbackReason: limitCheck.reason,
+          fallbackReason: limitCheck.message,
+          reason: limitCheck.reasonCode || "limit_reached",
         },
-        { status: 429 }
+        { status: 200 }
       );
     }
 
@@ -271,75 +472,48 @@ Instructions for Code Doctor:
 - If the code is empty or unrelated, mention that politely and provide the normal Level ${level} hint.`;
     }
 
-    // Provider call with 1 retry on 429/5xx and 15s timeout
-    const fetchAIHint = async (): Promise<string> => {
-      const endpoint = `${baseUrl}/chat/completions`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+    // Call provider with safe logging & retry
+    const result = await callAIProvider(endpoint, apiKey, model, [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ]);
 
-      try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userMessage },
-            ],
-            temperature: 0.7,
-            max_tokens: 350,
-          }),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`AI provider returned status ${response.status}`);
-        }
-
-        const data = await response.json();
-        const content = data?.choices?.[0]?.message?.content || "";
-        return content;
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    };
-
-    let aiReply = "";
-    try {
-      aiReply = await fetchAIHint();
-    } catch (err: any) {
-      // Retry once on failure
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        aiReply = await fetchAIHint();
-      } catch (retryErr: any) {
-        // Fall back gracefully to static hint without crashing
-        console.error("AI hint fetch failed after retry:", retryErr?.message || retryErr);
-        return NextResponse.json({
-          hint: staticFallbackHint,
-          level,
-          totalHints: 4,
-          source: "static",
-          isFallback: true,
-          fallbackReason: "AI hints are resting for today, here is a built-in hint.",
-        });
-      }
+    if (!result.ok) {
+      return NextResponse.json({
+        hint: staticFallbackHint,
+        level,
+        totalHints: 4,
+        source: "static",
+        isFallback: true,
+        fallbackReason: "AI hints are resting for today, here is a built-in hint.",
+        reason: result.reason || "provider_error",
+      });
     }
 
     // Safety guard on model output
-    const sanitizedHint = validateAndSanitizeOutput(aiReply, level, staticFallbackHint);
+    const guard = validateAndSanitizeOutput(result.content, level);
+    if (!guard.valid) {
+      return NextResponse.json({
+        hint: staticFallbackHint,
+        level,
+        totalHints: 4,
+        source: "static",
+        isFallback: true,
+        fallbackReason: "AI hints are resting for today, here is a built-in hint.",
+        reason: guard.rejectionReason || "guard",
+      });
+    }
+
+    // Commit visitor usage only after successful AI response
+    commitRateLimitUsage(clientHash);
 
     // Cache if not using user code
-    if (!isCodeDoctor && sanitizedHint !== staticFallbackHint) {
-      hintCache.set(cacheKey, sanitizedHint);
+    if (!isCodeDoctor) {
+      hintCache.set(cacheKey, guard.sanitized);
     }
 
     return NextResponse.json({
-      hint: sanitizedHint,
+      hint: guard.sanitized,
       level,
       totalHints: 4,
       source: "ai",
@@ -347,7 +521,7 @@ Instructions for Code Doctor:
       language,
     });
   } catch (error: any) {
-    console.error("Error in hint route handler:", error?.message || error);
+    console.error("[AI Hint Route Exception] Unhandled server error:", error?.message || error);
     return NextResponse.json(
       {
         hint: "Think about the problem constraints and edge cases. What data structure allows fastest lookups?",
@@ -356,6 +530,7 @@ Instructions for Code Doctor:
         source: "static",
         isFallback: true,
         fallbackReason: "An unexpected error occurred. Showing built-in hint.",
+        reason: "provider_error",
       },
       { status: 500 }
     );

@@ -1,4 +1,4 @@
-import { Problem, MentorMode, HintLanguage } from "@/types/problem";
+import { Problem, MentorMode, HintLanguage, AIHintFailureReason } from "@/types/problem";
 
 export interface AIHintResponse {
   hint: string;
@@ -10,6 +10,7 @@ export interface AIHintResponse {
   language?: HintLanguage;
   isFallback?: boolean;
   fallbackReason?: string;
+  reason?: AIHintFailureReason;
   isCached?: boolean;
 }
 
@@ -88,6 +89,7 @@ export async function getHint(
           language,
           isFallback: Boolean(data.isFallback),
           fallbackReason: data.fallbackReason,
+          reason: data.reason,
           isCached: Boolean(data.isCached),
         };
       }
@@ -103,6 +105,7 @@ export async function getHint(
           source: "static",
           isFallback: true,
           fallbackReason: errData.fallbackReason || "AI hints are resting for today, here is a built-in hint.",
+          reason: errData.reason || "rate_limit",
         };
       }
     } catch {
@@ -121,5 +124,6 @@ export async function getHint(
     language,
     isFallback: true,
     fallbackReason: "AI hints are resting for today, here is a built-in hint.",
+    reason: "provider_error",
   };
 }

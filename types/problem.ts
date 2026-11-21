@@ -211,6 +211,17 @@ export interface ProblemExample {
 export type MentorMode = "mentor_bhaiya" | "detective" | "cricket_commentary";
 export type HintLanguage = "english" | "hinglish";
 
+export type AIHintFailureReason =
+  | "provider_error"
+  | "rate_limit"
+  | "auth"
+  | "model"
+  | "parse"
+  | "guard"
+  | "timeout"
+  | "limit_reached"
+  | "missing_key";
+
 export interface Problem {
   id: string;
   slug: string;

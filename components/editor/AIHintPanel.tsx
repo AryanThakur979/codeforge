@@ -19,7 +19,7 @@ import {
   Trophy,
   Volume2,
 } from "lucide-react";
-import { Problem, MentorMode, HintLanguage } from "@/types/problem";
+import { Problem, MentorMode, HintLanguage, AIHintFailureReason } from "@/types/problem";
 import { getHint, AIHintResponse } from "@/lib/ai";
 
 interface AIHintPanelProps {
@@ -36,6 +36,7 @@ interface UnlockedHint {
   language: HintLanguage;
   isFallback?: boolean;
   fallbackReason?: string;
+  reason?: AIHintFailureReason;
 }
 
 const LADDER_META = [
@@ -76,8 +77,22 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
   const [lookAtCode, setLookAtCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeNotice, setActiveNotice] = useState<string | null>(null);
+  const [activeDebugReason, setActiveDebugReason] = useState<string | null>(null);
+  const [isDebugMode, setIsDebugMode] = useState(false);
 
   const storageKey = `codeforge_ai_hints_${problem.slug}`;
+
+  // Check for ?debug=1 in URL
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        setIsDebugMode(params.get("debug") === "1");
+      } catch {
+        // Ignore URL parsing errors
+      }
+    }
+  }, []);
 
   // Restore unlocked hints from localStorage
   useEffect(() => {
@@ -116,6 +131,7 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
 
     setIsLoading(true);
     setActiveNotice(null);
+    setActiveDebugReason(null);
 
     try {
       const result: AIHintResponse = await getHint(problem, {
@@ -134,10 +150,14 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
         language,
         isFallback: result.isFallback,
         fallbackReason: result.fallbackReason,
+        reason: result.reason,
       };
 
       if (result.isFallback && result.fallbackReason) {
         setActiveNotice(result.fallbackReason);
+        if (result.reason) {
+          setActiveDebugReason(result.reason);
+        }
       }
 
       saveHints([...unlockedHints, newHintEntry]);
@@ -156,9 +176,11 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
         language,
         isFallback: true,
         fallbackReason: "AI hints are resting for today, here is a built-in hint.",
+        reason: "provider_error",
       };
 
       setActiveNotice("AI hints are resting for today, here is a built-in hint.");
+      setActiveDebugReason("provider_error");
       saveHints([...unlockedHints, fallbackEntry]);
     } finally {
       setIsLoading(false);
@@ -331,9 +353,16 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
 
       {/* Active Notice / Fallback Message */}
       {activeNotice && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-mono text-amber-800 dark:text-amber-300 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-          <span>{activeNotice}</span>
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-mono text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <span>{activeNotice}</span>
+          </div>
+          {isDebugMode && activeDebugReason && (
+            <span className="text-[10px] font-mono text-slate-400 dark:text-gray-500 shrink-0">
+              debug: {activeDebugReason}
+            </span>
+          )}
         </div>
       )}
 
@@ -373,11 +402,18 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
                     </span>
                   </div>
 
-                  {hint.isFallback && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-secondary text-slate-500 dark:text-gray-400 border border-surface-border">
-                      Built-in
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {isDebugMode && hint.reason && (
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-gray-500">
+                        debug: {hint.reason}
+                      </span>
+                    )}
+                    {hint.isFallback && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-secondary text-slate-500 dark:text-gray-400 border border-surface-border">
+                        Built-in
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="text-xs text-slate-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap">
