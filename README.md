@@ -157,39 +157,52 @@ To add another language (e.g. Ruby, Go, or Lua via WebAssembly):
 
 ---
 
-## 🤖 AI Hint Ladder & Mentor System
+## 🤖 AI Hint Agent & Mentor Architecture
 
-CodeForge includes a progressive, pedagogically safe **4-Level AI Hint Ladder** that guides students without spoiling the full solution:
-1. **Level 1 (Nudge)**: One guiding question that prompts intuition.
-2. **Level 2 (Analogy)**: A real-world analogy (cricket, chai, Mumbai local, kitchen, cards) illustrating the core pattern.
+CodeForge features a multi-tiered, pedagogically grounded **AI Hint Agent** designed to guide students toward the "Aha!" moment without spoiling code solutions.
+
+### 🪜 4-Level Hint Ladder
+1. **Level 1 (Nudge)**: Exactly one Socratic guiding question pointing toward the algorithmic invariant.
+2. **Level 2 (Analogy)**: A real-world analogy (cricket, chai, train/metro, kitchen, cards) illustrating the algorithmic mechanism.
 3. **Level 3 (Approach)**: Plain-English algorithmic strategy steps with zero code.
-4. **Level 4 (Skeleton)**: Partial pseudocode with blanks (`____`) for the student to fill in. Never the full solution.
+4. **Level 4 (Skeleton)**: Partial pseudocode with blanks (`____`) for the student to fill in. Full solutions are strictly refused.
 
-### Mentor Personas & Code Doctor
-- **Mentor Bhaiya**: Friendly elder brother with authentic Hinglish (or English).
-- **The Detective**: Noir investigator treating edge cases and invariants as crime scene clues.
-- **Cricket Commentary**: High-energy stadium commentary with witty cricket metaphors.
-- **Code Doctor Toggle ("Look at my code")**: Sends current editor code for targeted line pointers without rewriting the code.
+### 🧠 Agent Features
+- **Private Teacher Notes**: Every problem includes private pedagogical ground-truth notes (`coreIdea`, `optimalApproach`, `commonMistakes`, `edgeCases`, `conceptToTeach`). These inform the agent server-side and are never sent to the browser or leaked verbatim.
+- **Two-Step Generation & Judge Pass**: Output is generated as structured JSON (`{ hint, followUpQuestion, confidence }`) and verified by an automated judge pass to ensure level adherence, solution safety, persona fidelity, and concise length (<120 words).
+- **Interactive Follow-Up Chat**: Students can ask up to 3 conversational follow-up questions per problem, with full stuck-awareness and encouraging guidance.
+- **Code Doctor 2.0 ("Look at my code")**: When enabled, the agent inspects the user's code alongside visible test execution results (failed input, expected vs. actual) to pinpoint the logic error without giving away the corrected code. Hidden test cases remain strictly confidential.
+- **Authentic Personas**:
+  - **Mentor Bhaiya**: Friendly elder brother with authentic Hinglish (or English).
+  - **The Detective**: Noir investigator treating invariants and edge cases as clues.
+  - **Cricket Commentary**: High-energy stadium commentator with cricket analogies.
+- **Dual-Model Fallback & Resilience**: Seamlessly routes between a primary high-quality chat model and a fast fallback model on rate limits or errors, gracefully degrading to authentic built-in hints with `"Built-in hint (AI unavailable right now)"` if no API key is set.
 
-### 🔑 How to Get a Free AI Key & Set Env Variables
+---
 
-CodeForge uses a provider-agnostic OpenAI-compatible HTTP Chat Completions endpoint. You can use any free tier provider:
+### 🔑 Verified Free-Tier Models & Environment Variables
 
-| Provider | Recommended Model | Free Tier Details | Base URL |
-| :--- | :--- | :--- | :--- |
-| **Groq (Recommended)** | `llama-3.3-70b-versatile` or `llama-3.1-8b-instant` | Instant key, very high tokens/min gratis | `https://api.groq.com/openai/v1` |
-| **Google Gemini** | `gemini-1.5-flash` | Free tier via Google AI Studio | `https://generativelanguage.googleapis.com/v1beta/openai` |
-| **OpenRouter** | `meta-llama/llama-3.3-70b-instruct:free` | Aggregates free models with one key | `https://openrouter.ai/api/v1` |
+CodeForge connects to any OpenAI-compatible completions endpoint. The recommended free-tier setup uses **Groq**:
+
+| Variable | Recommended Value | Notes |
+| :--- | :--- | :--- |
+| `AI_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible endpoint |
+| `AI_MODEL` | `qwen/qwen3.8-27b` | **Primary Model**: Fast, accurate, excellent Hinglish |
+| `AI_FALLBACK_MODEL` | `openai/gpt-oss-20b` | **Fallback Model**: Reasoning model for fallback |
+| `AI_API_KEY` | `gsk_...` | Free key from [console.groq.com](https://console.groq.com/keys) |
+| `AI_DAILY_LIMIT` | `500` | Optional global daily safety cap |
 
 #### Steps to Set in Vercel:
 1. Open your project on [Vercel Dashboard](https://vercel.com).
 2. Go to **Settings** &rarr; **Environment Variables**.
-3. Add the following variables:
-   - `AI_API_KEY`: Your provider API key (e.g. `gsk_...` from [console.groq.com](https://console.groq.com/keys)).
-   - `AI_BASE_URL`: `https://api.groq.com/openai/v1` (or your chosen provider base URL).
-   - `AI_MODEL`: `llama-3.3-70b-versatile` (or your chosen model).
-   - `AI_DAILY_LIMIT`: `500` (optional daily cap to protect free tier quota).
-4. Save and redeploy.
+3. Add `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`, and `AI_FALLBACK_MODEL`.
+4. Redeploy your project.
+
+#### Run Hint Evaluation Suite:
+Test all 20 problems across levels, languages, and personas for solution leaks, teacher note protection, and persona fidelity:
+```bash
+npm run eval:hints
+```
 
 > **Note**: If `AI_API_KEY` is not provided, the system automatically and gracefully degrades to the handcrafted built-in hint ladder for all problems with zero build or runtime errors.
 

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "eval:hints": "node scripts/eval-hints.js"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",

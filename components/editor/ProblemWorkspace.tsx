@@ -250,6 +250,26 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     }
   };
 
+  const visibleTestResults = useMemo(() => {
+    if (!results?.results) return undefined;
+    return results.results
+      .filter((r) => {
+        const tc = problem.testCases.find((t) => t.id === r.testCaseId);
+        return tc && !tc.isHidden;
+      })
+      .map((r) => {
+        const tc = problem.testCases.find((t) => t.id === r.testCaseId);
+        return {
+          id: r.testCaseId,
+          input: tc ? JSON.stringify(tc.input) : "",
+          expected: tc ? JSON.stringify(tc.expected) : "",
+          actual: JSON.stringify(r.actual),
+          passed: r.passed,
+          errorMessage: r.error,
+        };
+      });
+  }, [results, problem.testCases]);
+
   const isSolved = Boolean(solvedProblems[problem.slug]);
   const currentLangMeta = LEETCODE_LANGUAGES.find((l) => l.id === language);
 
@@ -409,7 +429,13 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           </div>
 
           {leftTab === "hints" || mobileTab === "hints" ? (
-            <AIHintPanel problem={problem} currentCode={code} isProblemSolved={isSolved} />
+            <AIHintPanel
+              problem={problem}
+              currentCode={code}
+              codeLanguage={language}
+              visibleTests={visibleTestResults}
+              isProblemSolved={isSolved}
+            />
           ) : (
             <div className="space-y-6">
               {/* Tags */}

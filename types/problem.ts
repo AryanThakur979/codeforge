@@ -222,6 +222,43 @@ export type AIHintFailureReason =
   | "limit_reached"
   | "missing_key";
 
+export interface VisibleTestResultSummary {
+  id: number;
+  input: string;
+  expected: string;
+  actual?: string;
+  passed: boolean;
+  errorMessage?: string;
+}
+
+export interface CodeDoctorPayload {
+  code: string;
+  language: string;
+  visibleTests?: VisibleTestResultSummary[];
+}
+
+export interface FollowUpMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface AIHintResponse {
+  hint: string;
+  followUpQuestion?: string;
+  confidence?: number;
+  level: 1 | 2 | 3 | 4;
+  index: number;
+  totalHints: number;
+  source: "static" | "ai";
+  mode?: MentorMode;
+  language?: HintLanguage;
+  isFallback?: boolean;
+  fallbackReason?: string;
+  reason?: AIHintFailureReason;
+  isCached?: boolean;
+  followUpsRemaining?: number;
+}
+
 export interface Problem {
   id: string;
   slug: string;
@@ -232,6 +269,7 @@ export interface Problem {
   examples: ProblemExample[];
   constraints: string[];
   hints: string[];
+  hintsHinglish?: string[];
   hintTopic?: string;
   functionName: string;
   starterCode: {

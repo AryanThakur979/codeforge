@@ -9,28 +9,37 @@ import {
   MapPin,
   Lock,
   Unlock,
-  Eye,
-  EyeOff,
   Loader2,
   AlertCircle,
   HelpCircle,
-  CheckCircle2,
   Compass,
   Trophy,
-  Volume2,
+  Send,
+  MessageSquare,
+  ChevronRight,
 } from "lucide-react";
-import { Problem, MentorMode, HintLanguage, AIHintFailureReason } from "@/types/problem";
+import {
+  Problem,
+  MentorMode,
+  HintLanguage,
+  AIHintFailureReason,
+  VisibleTestResultSummary,
+  FollowUpMessage,
+} from "@/types/problem";
 import { getHint, AIHintResponse } from "@/lib/ai";
 
 interface AIHintPanelProps {
   problem: Problem;
   currentCode: string;
+  codeLanguage?: string;
+  visibleTests?: VisibleTestResultSummary[];
   isProblemSolved?: boolean;
 }
 
 interface UnlockedHint {
   level: 1 | 2 | 3 | 4;
   content: string;
+  followUpQuestion?: string;
   source: "static" | "ai";
   mode: MentorMode;
   language: HintLanguage;
@@ -70,7 +79,13 @@ const LADDER_META = [
   },
 ];
 
-export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: AIHintPanelProps) {
+export function AIHintPanel({
+  problem,
+  currentCode,
+  codeLanguage = "javascript",
+  visibleTests,
+  isProblemSolved = false,
+}: AIHintPanelProps) {
   const [unlockedHints, setUnlockedHints] = useState<UnlockedHint[]>([]);
   const [mode, setMode] = useState<MentorMode>("mentor_bhaiya");
   const [language, setLanguage] = useState<HintLanguage>("hinglish");
@@ -80,46 +95,56 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
   const [activeDebugReason, setActiveDebugReason] = useState<string | null>(null);
   const [isDebugMode, setIsDebugMode] = useState(false);
 
-  const storageKey = `codeforge_ai_hints_${problem.slug}`;
+  // Follow-up chat state
+  const [followUpInput, setFollowUpInput] = useState("");
+  const [followUpsRemaining, setFollowUpsRemaining] = useState(3);
+  const [chatHistory, setChatHistory] = useState<FollowUpMessage[]>([]);
+  const [isSendingFollowUp, setIsSendingFollowUp] = useState(false);
 
-  // Check for ?debug=1 in URL
+  const storageKey = `codeforge_ai_hints_v2_${problem.slug}`;
+
+  // Check for ?debug=1
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
         const params = new URLSearchParams(window.location.search);
         setIsDebugMode(params.get("debug") === "1");
-      } catch {
-        // Ignore URL parsing errors
-      }
+      } catch {}
     }
   }, []);
 
-  // Restore unlocked hints from localStorage
+  // Restore unlocked hints and chat from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setUnlockedHints(parsed);
+        if (Array.isArray(parsed?.hints)) {
+          setUnlockedHints(parsed.hints);
+        }
+        if (Array.isArray(parsed?.history)) {
+          setChatHistory(parsed.history);
+        }
+        if (typeof parsed?.remaining === "number") {
+          setFollowUpsRemaining(parsed.remaining);
         }
       }
-    } catch {
-      // Ignore localStorage read failures
-    }
+    } catch {}
   }, [storageKey]);
 
-  // Persist hints when updated
-  const saveHints = (hints: UnlockedHint[]) => {
+  // Persist hints and chat
+  const saveState = (hints: UnlockedHint[], history: FollowUpMessage[], remaining: number) => {
     setUnlockedHints(hints);
+    setChatHistory(history);
+    setFollowUpsRemaining(remaining);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(hints));
-      // Track total hints count for "Solved with 0 hints" badge
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ hints, history, remaining })
+      );
       const countKey = `codeforge_hint_count_${problem.slug}`;
       localStorage.setItem(countKey, String(hints.length));
-    } catch {
-      // Ignore localStorage write failures
-    }
+    } catch {}
   };
 
   const highestLevelUnlocked = unlockedHints.length;
@@ -139,12 +164,16 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
         mode,
         language,
         code: currentCode,
+        codeLanguage,
+        visibleTests,
         lookAtCode,
+        history: chatHistory,
       });
 
       const newHintEntry: UnlockedHint = {
         level: nextLevelToUnlock,
         content: result.hint,
+        followUpQuestion: result.followUpQuestion,
         source: result.source,
         mode,
         language,
@@ -153,37 +182,93 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
         reason: result.reason,
       };
 
-      if (result.isFallback && result.fallbackReason) {
-        setActiveNotice(result.fallbackReason);
+      if (result.isFallback) {
+        setActiveNotice("Built-in hint (AI unavailable right now)");
         if (result.reason) {
           setActiveDebugReason(result.reason);
         }
       }
 
-      saveHints([...unlockedHints, newHintEntry]);
+      const nextRemaining =
+        typeof result.followUpsRemaining === "number" ? result.followUpsRemaining : followUpsRemaining;
+
+      saveState([...unlockedHints, newHintEntry], chatHistory, nextRemaining);
     } catch {
-      // Fallback to static hint from problem data
-      const staticHints = problem.hints || [];
-      const fallbackText =
-        staticHints[nextLevelToUnlock - 1] ||
-        "Think about the problem constraints and edge cases. What data structure allows fastest lookups?";
+      const hintsArr =
+        language === "hinglish" && Array.isArray(problem.hintsHinglish) && problem.hintsHinglish.length > 0
+          ? problem.hintsHinglish
+          : problem.hints || [];
 
       const fallbackEntry: UnlockedHint = {
         level: nextLevelToUnlock,
-        content: fallbackText,
+        content: hintsArr[nextLevelToUnlock - 1] || "Think about the problem constraints and edge cases.",
         source: "static",
         mode,
         language,
         isFallback: true,
-        fallbackReason: "AI hints are resting for today, here is a built-in hint.",
+        fallbackReason: "Built-in hint (AI unavailable right now)",
         reason: "provider_error",
       };
 
-      setActiveNotice("AI hints are resting for today, here is a built-in hint.");
+      setActiveNotice("Built-in hint (AI unavailable right now)");
       setActiveDebugReason("provider_error");
-      saveHints([...unlockedHints, fallbackEntry]);
+      saveState([...unlockedHints, fallbackEntry], chatHistory, followUpsRemaining);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSendFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = followUpInput.trim();
+    if (!query || isSendingFollowUp || followUpsRemaining <= 0) return;
+
+    setIsSendingFollowUp(true);
+    setActiveNotice(null);
+    setActiveDebugReason(null);
+
+    const updatedHistory: FollowUpMessage[] = [
+      ...chatHistory,
+      { role: "user", content: query },
+    ];
+    setChatHistory(updatedHistory);
+    setFollowUpInput("");
+
+    try {
+      const result = await getHint(problem, {
+        level: (highestLevelUnlocked || 1) as 1 | 2 | 3 | 4,
+        mode,
+        language,
+        code: currentCode,
+        codeLanguage,
+        visibleTests,
+        lookAtCode,
+        followUpText: query,
+        history: updatedHistory,
+      });
+
+      const assistantReply: FollowUpMessage = {
+        role: "assistant",
+        content: result.hint,
+      };
+
+      const finalHistory = [...updatedHistory, assistantReply];
+      const remaining =
+        typeof result.followUpsRemaining === "number"
+          ? result.followUpsRemaining
+          : Math.max(0, followUpsRemaining - 1);
+
+      if (result.isFallback) {
+        setActiveNotice("Built-in hint (AI unavailable right now)");
+        if (result.reason) setActiveDebugReason(result.reason);
+      }
+
+      saveState(unlockedHints, finalHistory, remaining);
+    } catch {
+      setActiveNotice("Built-in hint (AI unavailable right now)");
+      setActiveDebugReason("provider_error");
+    } finally {
+      setIsSendingFollowUp(false);
     }
   };
 
@@ -198,7 +283,7 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>AI Hint Ladder</span>
+                <span>AI Hint Agent</span>
                 <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-forge-cyan/15 text-forge-cyan border border-forge-cyan/30">
                   Level {highestLevelUnlocked} of 4
                 </span>
@@ -263,30 +348,29 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
       {/* Mentor Controls & Preferences */}
       <div className="p-3.5 rounded-xl bg-surface-secondary/50 border border-surface-border space-y-3 text-xs">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Persona Selector */}
+          {/* Persona Selector (responsive, non-truncating) */}
           <div>
             <label className="block text-[11px] font-mono text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
               Mentor Persona
             </label>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-1.5">
               {[
-                { id: "mentor_bhaiya", label: "Mentor Bhaiya", emoji: "👨‍🏫" },
-                { id: "detective", label: "Detective", emoji: "🕵️" },
-                { id: "cricket_commentary", label: "Cricket", emoji: "🏏" },
-              ].map((item) => (
+                { id: "mentor_bhaiya", label: "Mentor Bhaiya", short: "Bhaiya" },
+                { id: "detective", label: "Detective", short: "Detective" },
+                { id: "cricket_commentary", label: "Commentary", short: "Cricket" },
+              ].map((p) => (
                 <button
-                  key={item.id}
+                  key={p.id}
                   type="button"
-                  onClick={() => setMode(item.id as MentorMode)}
-                  className={`py-1.5 px-2 rounded-lg font-mono text-[11px] font-medium transition-all text-center truncate ${
-                    mode === item.id
+                  onClick={() => setMode(p.id as MentorMode)}
+                  className={`py-1.5 px-2 rounded-lg font-mono text-[11px] transition-all text-center ${
+                    mode === p.id
                       ? "bg-forge-cyan text-white dark:text-background font-bold shadow-sm"
-                      : "bg-surface/70 border border-surface-border text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white"
+                      : "bg-surface hover:bg-surface-secondary text-slate-600 dark:text-gray-400 border border-surface-border"
                   }`}
-                  title={item.label}
                 >
-                  <span className="mr-1">{item.emoji}</span>
-                  <span>{item.label}</span>
+                  <span className="sm:hidden">{p.short}</span>
+                  <span className="hidden sm:inline">{p.label}</span>
                 </button>
               ))}
             </div>
@@ -299,27 +383,27 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
             </label>
             <div className="grid grid-cols-2 gap-1.5">
               {[
-                { id: "hinglish", label: "Hinglish (Hindi + Eng)" },
-                { id: "english", label: "English Only" },
-              ].map((item) => (
+                { id: "hinglish", label: "Hinglish" },
+                { id: "english", label: "English" },
+              ].map((l) => (
                 <button
-                  key={item.id}
+                  key={l.id}
                   type="button"
-                  onClick={() => setLanguage(item.id as HintLanguage)}
-                  className={`py-1.5 px-2 rounded-lg font-mono text-[11px] font-medium transition-all text-center truncate ${
-                    language === item.id
-                      ? "bg-forge-purple/20 border border-forge-purple/40 text-forge-purple font-bold shadow-sm"
-                      : "bg-surface/70 border border-surface-border text-slate-700 dark:text-gray-300 hover:text-slate-950 dark:hover:text-white"
+                  onClick={() => setLanguage(l.id as HintLanguage)}
+                  className={`py-1.5 px-2.5 rounded-lg font-mono text-[11px] transition-all text-center ${
+                    language === l.id
+                      ? "bg-forge-cyan text-white dark:text-background font-bold shadow-sm"
+                      : "bg-surface hover:bg-surface-secondary text-slate-600 dark:text-gray-400 border border-surface-border"
                   }`}
                 >
-                  {item.label}
+                  {l.label}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Code Doctor Toggle */}
+        {/* Code Doctor 2.0 Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-surface-border/60">
           <div className="flex items-center gap-2">
             <button
@@ -345,7 +429,7 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
 
           <span className="text-[11px] text-slate-500 dark:text-gray-400">
             {lookAtCode
-              ? "Mentor will inspect your editor code for targeted line pointers"
+              ? "Mentor inspects editor code & visible tests for targeted pointers"
               : "General algorithmic guidance without sending code"}
           </span>
         </div>
@@ -397,9 +481,11 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
                       <Icon className="w-3.5 h-3.5" />
                       <span>Level {hint.level}: {meta.title}</span>
                     </span>
-                    <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400 hidden sm:inline">
-                      • {hint.mode.replace("_", " ")} ({hint.language})
-                    </span>
+                    {!hint.isFallback && (
+                      <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400 hidden sm:inline">
+                        • {hint.mode.replace("_", " ")} ({hint.language})
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5">
@@ -410,7 +496,7 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
                     )}
                     {hint.isFallback && (
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-secondary text-slate-500 dark:text-gray-400 border border-surface-border">
-                        Built-in
+                        Built-in hint (AI unavailable right now)
                       </span>
                     )}
                   </div>
@@ -419,11 +505,87 @@ export function AIHintPanel({ problem, currentCode, isProblemSolved = false }: A
                 <div className="text-xs text-slate-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap">
                   {hint.content}
                 </div>
+
+                {/* Socratic "Think about this" callout */}
+                {hint.followUpQuestion && (
+                  <div className="mt-2 pt-2 border-t border-surface-border/50 text-[11px] font-sans text-forge-cyan dark:text-cyan-400 flex items-start gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      <strong className="font-semibold">Think about this:</strong> {hint.followUpQuestion}
+                    </span>
+                  </div>
+                )}
               </motion.div>
             );
           })
         )}
       </div>
+
+      {/* Follow-Up Chat History */}
+      {chatHistory.length > 0 && (
+        <div className="space-y-2 pt-2 border-t border-surface-border/60">
+          <div className="text-[11px] font-mono font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Follow-up Discussion</span>
+          </div>
+
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+            {chatHistory.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-2.5 rounded-xl text-xs ${
+                  msg.role === "user"
+                    ? "bg-forge-cyan/10 border border-forge-cyan/30 text-slate-900 dark:text-white ml-6"
+                    : "bg-surface/80 border border-surface-border text-slate-800 dark:text-gray-200 mr-6"
+                }`}
+              >
+                <div className="font-mono text-[10px] text-slate-500 dark:text-gray-400 mb-1">
+                  {msg.role === "user" ? "You asked:" : "Mentor reply:"}
+                </div>
+                <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Follow-Up Question Input */}
+      {highestLevelUnlocked > 0 && (
+        <form onSubmit={handleSendFollowUp} className="space-y-1.5 pt-2">
+          <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-gray-400">
+            <span>Ask a quick follow-up:</span>
+            <span>{followUpsRemaining}/3 remaining</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={followUpInput}
+              onChange={(e) => setFollowUpInput(e.target.value)}
+              disabled={isSendingFollowUp || followUpsRemaining <= 0}
+              placeholder={
+                followUpsRemaining > 0
+                  ? "e.g. 'why does the map help here?'"
+                  : "No follow-ups remaining for this problem"
+              }
+              maxLength={300}
+              className="flex-1 px-3 py-2 rounded-xl bg-surface border border-surface-border text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-forge-cyan transition-all disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={!followUpInput.trim() || isSendingFollowUp || followUpsRemaining <= 0}
+              className="px-3 py-2 rounded-xl bg-forge-cyan text-white dark:text-background font-mono text-xs font-bold hover:opacity-90 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1 shrink-0"
+              aria-label="Send follow-up question"
+            >
+              {isSendingFollowUp ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Unlock Next Level CTA */}
       {!allUnlocked ? (
