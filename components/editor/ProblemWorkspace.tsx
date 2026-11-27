@@ -57,7 +57,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   } = useCodeForgeStore();
 
   // Local component states
-  const [language, setLanguage] = useState<SupportedLanguage>("cpp");
+  const [language, setLanguage] = useState<SupportedLanguage>("python3");
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [code, setCode] = useState<string>("");
   const [mobileTab, setMobileTab] = useState<"description" | "hints" | "editor" | "results">("description");
@@ -102,7 +102,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
 
   // When switching to Python3, preload Pyodide lazily
   useEffect(() => {
-    if (language === "python3") {
+    if (language === "python3" || language === "python") {
       pythonRunner.preload();
     }
   }, [language]);
@@ -183,7 +183,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
       return await jsRunner.run(code, problem.functionName, testCasesToRun);
     } else if (language === "typescript") {
       return await tsRunner.run(code, problem.functionName, testCasesToRun);
-    } else if (language === "python3") {
+    } else if (language === "python3" || language === "python") {
       return await pythonRunner.run(code, problem.functionName, testCasesToRun);
     } else {
       judge0Runner.setLanguage(language);
@@ -271,11 +271,12 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   }, [results, problem.testCases]);
 
   const isSolved = Boolean(solvedProblems[problem.slug]);
-  const currentLangMeta = LEETCODE_LANGUAGES.find((l) => l.id === language);
+  const currentLangMeta =
+    LEETCODE_LANGUAGES.find((l) => l.id === language) ||
+    LEETCODE_LANGUAGES.find((l) => l.id === "python3");
 
   const col1 = LEETCODE_LANGUAGES.filter((l) => l.column === 1);
   const col2 = LEETCODE_LANGUAGES.filter((l) => l.column === 2);
-  const col3 = LEETCODE_LANGUAGES.filter((l) => l.column === 3);
 
   return (
     <div
@@ -576,14 +577,14 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 <span>Code</span>
               </span>
 
-              {/* LeetCode-style 3-Column Language Selector Dropdown */}
+              {/* 2-Column Verified Language Selector Dropdown */}
               <div className="relative" ref={langDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setLangDropdownOpen((prev) => !prev)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary border border-surface-border hover:border-forge-cyan/50 text-xs font-mono font-semibold text-slate-900 dark:text-white hover:text-forge-cyan transition-all shadow-sm"
                 >
-                  <span>{currentLangMeta?.name || "C++"}</span>
+                  <span>{currentLangMeta?.name || "Python 3"}</span>
                   <ChevronDown
                     className={`w-3.5 h-3.5 text-slate-500 dark:text-gray-400 transition-transform ${
                       langDropdownOpen ? "rotate-180 text-forge-cyan" : ""
@@ -591,11 +592,14 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                   />
                 </button>
 
-                {/* Floating LeetCode-style 3-Column Menu */}
+                {/* Floating 2-Column Menu */}
                 {langDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 z-50 w-[280px] sm:w-[460px] p-2.5 rounded-2xl bg-surface border border-surface-border shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-1.5 max-h-[420px] overflow-y-auto">
-                    {/* Column 1 */}
-                    <div className="space-y-0.5 sm:border-r border-surface-border/50 sm:pr-1.5">
+                  <div className="absolute left-0 top-full mt-1.5 z-50 w-[290px] sm:w-[380px] p-2.5 rounded-2xl bg-surface border border-surface-border shadow-2xl grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[420px] overflow-y-auto">
+                    {/* Column 1: Client Runtimes */}
+                    <div className="space-y-1">
+                      <div className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-forge-cyan font-bold">
+                        Client 0ms
+                      </div>
                       {col1.map((l) => (
                         <button
                           key={l.id}
@@ -605,21 +609,29 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                             setLangDropdownOpen(false);
                           }}
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
-                            language === l.id
+                            language === l.id || (language === "python" && l.id === "python3")
                               ? "bg-forge-cyan/15 text-forge-cyan font-bold"
                               : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                           }`}
                         >
-                          <span>{l.name}</span>
-                          {language === l.id && (
+                          <div className="flex flex-col">
+                            <span>{l.name}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-gray-400 font-normal">
+                              {l.badge}
+                            </span>
+                          </div>
+                          {(language === l.id || (language === "python" && l.id === "python3")) && (
                             <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
                           )}
                         </button>
                       ))}
                     </div>
 
-                    {/* Column 2 */}
-                    <div className="space-y-0.5 sm:border-r border-surface-border/50 sm:pr-1.5">
+                    {/* Column 2: Cloud Compilers */}
+                    <div className="space-y-1 sm:border-l border-surface-border/50 sm:pl-2">
+                      <div className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold">
+                        Cloud Engine
+                      </div>
                       {col2.map((l) => (
                         <button
                           key={l.id}
@@ -634,31 +646,12 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                               : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
                           }`}
                         >
-                          <span>{l.name}</span>
-                          {language === l.id && (
-                            <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Column 3 */}
-                    <div className="space-y-0.5">
-                      {col3.map((l) => (
-                        <button
-                          key={l.id}
-                          type="button"
-                          onClick={() => {
-                            setLanguage(l.id);
-                            setLangDropdownOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
-                            language === l.id
-                              ? "bg-forge-cyan/15 text-forge-cyan font-bold"
-                              : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
-                          }`}
-                        >
-                          <span>{l.name}</span>
+                          <div className="flex flex-col">
+                            <span>{l.name}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-gray-400 font-normal">
+                              {l.badge}
+                            </span>
+                          </div>
                           {language === l.id && (
                             <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
                           )}
@@ -670,12 +663,12 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
               </div>
 
               {/* Status / Runtime Badge */}
-              {language === "python3" ? (
+              {language === "python3" || language === "python" ? (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-secondary border border-surface-border text-[11px] font-mono">
                   {pyodideStatus === "loading" ? (
                     <>
                       <Loader2 className="w-3 h-3 text-forge-amber animate-spin" />
-                      <span className="text-forge-amber hidden sm:inline">Loading WASM...</span>
+                      <span className="text-forge-amber hidden sm:inline">Loading Pyodide 3.12...</span>
                     </>
                   ) : pyodideStatus === "ready" ? (
                     <>
@@ -684,8 +677,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                     </>
                   ) : pyodideStatus === "error" ? (
                     <>
-                      <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <span className="text-rose-700 dark:text-rose-400 hidden sm:inline">Pyodide Error</span>
+                      <span className="w-2 h-2 rounded-full bg-forge-amber" />
+                      <span className="text-forge-amber hidden sm:inline">Cloud 3.12 Ready</span>
                     </>
                   ) : (
                     <>

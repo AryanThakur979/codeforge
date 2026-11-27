@@ -1,76 +1,43 @@
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export type SupportedLanguage =
-  | "cpp"
-  | "java"
   | "python3"
   | "python"
   | "javascript"
   | "typescript"
-  | "csharp"
-  | "c"
-  | "go"
-  | "kotlin"
-  | "swift"
-  | "rust"
-  | "ruby"
-  | "php"
-  | "dart"
-  | "scala"
-  | "elixir"
-  | "erlang"
-  | "racket";
+  | "cpp"
+  | "java"
+  | "c";
 
 export interface LanguageInfo {
   id: SupportedLanguage;
   name: string;
-  column: 1 | 2 | 3;
+  column: 1 | 2;
   extension: string;
   badge: string;
   runtimeLabel: string;
+  isBrowserExecution?: boolean;
 }
 
 export const LEETCODE_LANGUAGES: LanguageInfo[] = [
-  // Column 1
-  {
-    id: "cpp",
-    name: "C++",
-    column: 1,
-    extension: ".cpp",
-    badge: "GCC 14.1",
-    runtimeLabel: "Compiler: GCC 14.1.0 (Zero-Cost Cloud)",
-  },
-  {
-    id: "java",
-    name: "Java",
-    column: 1,
-    extension: ".java",
-    badge: "JDK 17",
-    runtimeLabel: "Compiler: OpenJDK 17.0.6 (Zero-Cost Cloud)",
-  },
+  // Column 1: High-Speed In-Browser Client Engines (0ms Network Latency)
   {
     id: "python3",
-    name: "Python3",
+    name: "Python 3",
     column: 1,
     extension: ".py",
     badge: "Pyodide WASM",
-    runtimeLabel: "Pyodide 3.12 (In-Browser WebAssembly)",
-  },
-  {
-    id: "python",
-    name: "Python",
-    column: 1,
-    extension: ".py",
-    badge: "Python 2.7",
-    runtimeLabel: "Runtime: Python 2.7.17 (Zero-Cost Cloud)",
+    runtimeLabel: "Python 3.12 (In-Browser Pyodide WASM)",
+    isBrowserExecution: true,
   },
   {
     id: "javascript",
     name: "JavaScript",
     column: 1,
     extension: ".js",
-    badge: "Worker (0ms)",
-    runtimeLabel: "Sandboxed Web Worker (3s Guard)",
+    badge: "0ms Worker",
+    runtimeLabel: "JavaScript (Node.js 22 Compatible Worker)",
+    isBrowserExecution: true,
   },
   {
     id: "typescript",
@@ -78,115 +45,37 @@ export const LEETCODE_LANGUAGES: LanguageInfo[] = [
     column: 1,
     extension: ".ts",
     badge: "TS 5.6",
-    runtimeLabel: "Client-Side Worker (Instant TS)",
+    runtimeLabel: "TypeScript 5.6 (Client-Side Worker)",
+    isBrowserExecution: true,
+  },
+
+  // Column 2: Zero-Cost Cloud Compilers (GCC 14.1 / OpenJDK 17)
+  {
+    id: "cpp",
+    name: "C++",
+    column: 2,
+    extension: ".cpp",
+    badge: "GCC 14.1",
+    runtimeLabel: "C++ (GCC 14.1.0 Cloud)",
+    isBrowserExecution: false,
   },
   {
-    id: "csharp",
-    name: "C#",
-    column: 1,
-    extension: ".cs",
-    badge: "Mono 6.6",
-    runtimeLabel: "Compiler: C# Mono 6.6 (Zero-Cost Cloud)",
+    id: "java",
+    name: "Java",
+    column: 2,
+    extension: ".java",
+    badge: "JDK 17",
+    runtimeLabel: "Java (OpenJDK 17.0.6 Cloud)",
+    isBrowserExecution: false,
   },
   {
     id: "c",
     name: "C",
-    column: 1,
+    column: 2,
     extension: ".c",
     badge: "GCC 14.1",
-    runtimeLabel: "Compiler: GCC 14.1.0 (Zero-Cost Cloud)",
-  },
-
-  // Column 2
-  {
-    id: "go",
-    name: "Go",
-    column: 2,
-    extension: ".go",
-    badge: "Go 1.23",
-    runtimeLabel: "Compiler: Go 1.23.5 (Zero-Cost Cloud)",
-  },
-  {
-    id: "kotlin",
-    name: "Kotlin",
-    column: 2,
-    extension: ".kt",
-    badge: "Kotlin 2.1",
-    runtimeLabel: "Compiler: Kotlin 2.1.10 (Zero-Cost Cloud)",
-  },
-  {
-    id: "swift",
-    name: "Swift",
-    column: 2,
-    extension: ".swift",
-    badge: "Swift 5.2",
-    runtimeLabel: "Compiler: Swift 5.2.3 (Zero-Cost Cloud)",
-  },
-  {
-    id: "rust",
-    name: "Rust",
-    column: 2,
-    extension: ".rs",
-    badge: "Rust 1.85",
-    runtimeLabel: "Compiler: Rust 1.85.0 (Zero-Cost Cloud)",
-  },
-  {
-    id: "ruby",
-    name: "Ruby",
-    column: 2,
-    extension: ".rb",
-    badge: "Ruby 2.7",
-    runtimeLabel: "Interpreter: Ruby 2.7.0 (Zero-Cost Cloud)",
-  },
-  {
-    id: "php",
-    name: "PHP",
-    column: 2,
-    extension: ".php",
-    badge: "PHP 8.3",
-    runtimeLabel: "Interpreter: PHP 8.3.11 (Zero-Cost Cloud)",
-  },
-  {
-    id: "dart",
-    name: "Dart",
-    column: 2,
-    extension: ".dart",
-    badge: "Dart 2.19",
-    runtimeLabel: "Compiler: Dart 2.19.2 (Zero-Cost Cloud)",
-  },
-  {
-    id: "scala",
-    name: "Scala",
-    column: 2,
-    extension: ".scala",
-    badge: "Scala 2.13",
-    runtimeLabel: "Compiler: Scala 2.13.2 (Zero-Cost Cloud)",
-  },
-
-  // Column 3
-  {
-    id: "elixir",
-    name: "Elixir",
-    column: 3,
-    extension: ".ex",
-    badge: "Elixir 1.9",
-    runtimeLabel: "Compiler: Elixir 1.9.4 (Zero-Cost Cloud)",
-  },
-  {
-    id: "erlang",
-    name: "Erlang",
-    column: 3,
-    extension: ".erl",
-    badge: "OTP 22.2",
-    runtimeLabel: "Compiler: Erlang OTP 22.2 (Zero-Cost Cloud)",
-  },
-  {
-    id: "racket",
-    name: "Racket",
-    column: 3,
-    extension: ".rkt",
-    badge: "Racket/Lisp",
-    runtimeLabel: "Interpreter: Racket / Common Lisp (Zero-Cost Cloud)",
+    runtimeLabel: "C (GCC 14.1.0 Cloud)",
+    isBrowserExecution: false,
   },
 ];
 

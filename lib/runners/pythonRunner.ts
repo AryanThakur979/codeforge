@@ -47,6 +47,10 @@ self.onmessage = async function (e) {
     try {
       const py = await initPyodide();
 
+      py.globals.set("_USER_CODE", code);
+      py.globals.set("_FUNCTION_NAME", functionName);
+      py.globals.set("_TEST_CASES_JSON", JSON.stringify(testCases));
+
       const pythonRunnerCode = \`
 import json
 import sys
@@ -57,8 +61,13 @@ _captured_stdout = io.StringIO()
 _orig_stdout = sys.stdout
 sys.stdout = _captured_stdout
 
+_ns = {
+    "__name__": "__main__",
+    "__doc__": None,
+}
+
 try:
-\${code.replace(/^/gm, "    ")}
+    exec(_USER_CODE, _ns)
 except Exception as _compile_err:
     sys.stdout = _orig_stdout
     _result_payload = json.dumps({
@@ -68,16 +77,23 @@ except Exception as _compile_err:
     })
 else:
     try:
-        _fn = globals().get("\${functionName}")
+        _fn = _ns.get(_FUNCTION_NAME) or globals().get(_FUNCTION_NAME)
+        if not _fn and "Solution" in _ns:
+            try:
+                _sol_inst = _ns["Solution"]()
+                _fn = getattr(_sol_inst, _FUNCTION_NAME, None)
+            except Exception:
+                pass
+
         if not _fn or not callable(_fn):
             sys.stdout = _orig_stdout
             _result_payload = json.dumps({
                 "type": "error",
-                "error": f"Function '\${functionName}' is not defined or not callable.",
+                "error": f"Function '{_FUNCTION_NAME}' is not defined or not callable.",
                 "logs": _captured_stdout.getvalue().splitlines()
             })
         else:
-            _raw_cases = json.loads('''\${JSON.stringify(testCases)}''')
+            _raw_cases = json.loads(_TEST_CASES_JSON)
             _results = []
             _all_passed = True
             _total_runtime = 0.0
@@ -94,7 +110,10 @@ else:
                     _duration = (_t_end - _t_start) * 1000.0
                     _total_runtime += _duration
 
-                    _passed = (_actual == _expected)
+                    # Deep equality normalization (tuples -> lists)
+                    _norm_actual = list(_actual) if isinstance(_actual, tuple) else _actual
+                    _norm_expected = list(_expected) if isinstance(_expected, tuple) else _expected
+                    _passed = (_norm_actual == _norm_expected)
                     if not _passed:
                         _all_passed = False
 

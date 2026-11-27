@@ -20,7 +20,7 @@ export const siteConfig = {
   ],
   stats: {
     problemsCount: "3,000+",
-    languagesSupported: "19 Languages",
+    languagesSupported: "6 Multi-Language Runtimes",
     cost: "100% Free",
     runtimeTarget: "0ms Backend Wait",
   },

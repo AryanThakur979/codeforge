@@ -7,29 +7,7 @@ import {
 } from "@/lib/runners/harnessBuilder";
 import { deepEqual } from "@/lib/utils";
 import { TestCaseInput, RunnerResponse, ExecutionResult } from "@/lib/runners/types";
-
-// Judge0 CE Language IDs - 100% matched with LeetCode's 19-language catalog
-const LANGUAGE_IDS: Record<string, number> = {
-  cpp: 105,        // C++ (GCC 14.1.0)
-  java: 91,        // Java (JDK 17.0.6)
-  python3: 100,    // Python 3 (3.12.5)
-  python: 70,      // Python 2 (2.7.17)
-  javascript: 97,  // JavaScript (Node.js 20.17.0)
-  typescript: 101, // TypeScript (5.6.2)
-  csharp: 51,      // C# (Mono 6.6.0.161)
-  c: 103,          // C (GCC 14.1.0)
-  go: 107,         // Go (1.23.5)
-  kotlin: 111,     // Kotlin (2.1.10)
-  swift: 83,       // Swift (5.2.3)
-  rust: 108,       // Rust (1.85.0)
-  ruby: 72,        // Ruby (2.7.0)
-  php: 98,         // PHP (8.3.11)
-  dart: 90,        // Dart (2.19.2)
-  scala: 81,       // Scala (2.13.2)
-  elixir: 57,      // Elixir (1.9.4)
-  erlang: 58,      // Erlang (OTP 22.2)
-  racket: 55,      // Common Lisp / Racket (SBCL 2.0.0)
-};
+import { JUDGE0_LANGUAGE_IDS } from "@/config/languages";
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const langId = LANGUAGE_IDS[language];
+    const langId = JUDGE0_LANGUAGE_IDS[language];
     if (!langId) {
       return NextResponse.json(
         { error: `Unsupported language: ${language}` },
@@ -68,32 +46,60 @@ export async function POST(req: NextRequest) {
       sourceCode = buildPythonSource(code, functionName, testCases);
     }
 
-    // Call Judge0 CE public API
+    // Call Judge0 CE public API with 10s timeout
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
-    const judge0Res = await fetch(
-      "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          source_code: sourceCode,
-          language_id: langId,
-          stdin: "",
-          cpu_time_limit: 4.0,
-          wall_time_limit: 8.0,
-        }),
-        signal: controller.signal,
-      }
-    );
+    let judge0Res: Response;
+    try {
+      judge0Res = await fetch(
+        "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            source_code: sourceCode,
+            language_id: langId,
+            stdin: "",
+            cpu_time_limit: 3.0,
+            wall_time_limit: 6.0,
+          }),
+          signal: controller.signal,
+        }
+      );
+    } catch (fetchErr: any) {
+      clearTimeout(timeout);
+      const isTimeout = fetchErr.name === "AbortError";
+      return NextResponse.json(
+        {
+          results: [],
+          status: isTimeout ? "tle" : "error",
+          totalRuntime: isTimeout ? 3000 : 0,
+          allPassed: false,
+          logs: [],
+          errorSummary: isTimeout
+            ? "Execution Timed Out: The cloud compiler did not respond within the 10 second limit."
+            : "Cloud execution service is currently unreachable. Please switch to in-browser Python 3 or JavaScript for instant execution.",
+        } satisfies RunnerResponse,
+        { status: 200 }
+      );
+    }
     clearTimeout(timeout);
 
     if (!judge0Res.ok) {
       const errText = await judge0Res.text();
+      let friendlyError = `Cloud compiler error (${judge0Res.status}): ${errText}`;
+      if (judge0Res.status === 429) {
+        friendlyError =
+          "Cloud compiler rate limit reached. The public execution server is currently receiving high traffic. Please wait a few moments and retry, or use in-browser Python 3 / JavaScript for instant 0ms execution without rate limits.";
+      } else if (judge0Res.status >= 500) {
+        friendlyError =
+          "Cloud compiler service is temporarily unavailable. Please try again shortly or switch to in-browser Python 3 / JavaScript.";
+      }
+
       return NextResponse.json(
         {
           results: [],
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
           totalRuntime: 0,
           allPassed: false,
           logs: [],
-          errorSummary: `Judge0 API error (${judge0Res.status}): ${errText}`,
+          errorSummary: friendlyError,
         } satisfies RunnerResponse,
         { status: 200 }
       );

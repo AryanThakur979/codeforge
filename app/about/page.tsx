@@ -94,10 +94,9 @@ export default function AboutPage() {
 
           <div className="p-5 rounded-2xl border border-surface-border bg-surface/40 backdrop-blur-md space-y-2">
             <Zap className="w-6 h-6 text-forge-amber" />
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Free Multi-Language Cloud Runtimes</h4>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Multi-Language Execution Runtimes</h4>
             <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed">
-              19 programming languages supported including C++, Java, Rust, Go, Python, and TypeScript
-              with zero setup and zero subscription fees.
+              6 core programming languages supported including Python 3, JavaScript, TypeScript, C++, Java, and C with zero setup and zero subscription fees.
             </p>
           </div>
 

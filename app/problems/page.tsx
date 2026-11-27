@@ -148,7 +148,7 @@ export default function ProblemsPage() {
               Algorithmic Problem Archive
             </h1>
             <p className="text-sm text-slate-600 dark:text-gray-400 max-w-xl">
-              Sharpen your intuition across 3,000+ data structure & algorithm patterns. Full 19-language support with instant execution.
+              Sharpen your intuition across 3,000+ data structure &amp; algorithm patterns with multi-language execution in Python 3, JavaScript, TypeScript, C++, Java, and C.
             </p>
           </div>
 

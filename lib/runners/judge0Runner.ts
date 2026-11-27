@@ -40,13 +40,22 @@ export class Judge0Runner implements CodeRunner {
 
       if (!res.ok) {
         const errorText = await res.text();
+        let friendlySummary = `Server error (${res.status}): ${errorText}`;
+        if (res.status === 429) {
+          friendlySummary =
+            "Cloud compiler rate limit reached. The public execution server is currently receiving high traffic. Please wait a few moments and try again, or use in-browser Python 3 / JavaScript for instant execution.";
+        } else if (res.status >= 500) {
+          friendlySummary =
+            "Cloud compiler service is temporarily unavailable. Please retry in a moment or use in-browser Python 3 / JavaScript.";
+        }
+
         return {
           results: [],
           status: "error",
           totalRuntime: 0,
           allPassed: false,
           logs: [],
-          errorSummary: `Server error (${res.status}): ${errorText}`,
+          errorSummary: friendlySummary,
         };
       }
 
@@ -61,7 +70,7 @@ export class Judge0Runner implements CodeRunner {
           totalRuntime: timeoutMs,
           allPassed: false,
           logs: [],
-          errorSummary: "Request timed out: Cloud compiler did not respond within 15 seconds.",
+          errorSummary: "Request timed out: Cloud compiler did not respond within 15 seconds. Please check for infinite loops or try in-browser Python 3 / JavaScript.",
         };
       }
 
@@ -71,7 +80,7 @@ export class Judge0Runner implements CodeRunner {
         totalRuntime: 0,
         allPassed: false,
         logs: [],
-        errorSummary: `Network/Client Error: ${err.message || String(err)}`,
+        errorSummary: `Connection Error: Could not reach execution server. Please check your internet connection or use in-browser Python 3 / JavaScript.`,
       };
     }
   }

@@ -54,7 +54,7 @@ function findTargetPair(nums, target) {
   // Your code here
 }
 `,
-      python: `def findTargetPair(nums, target):
+      python: `def findTargetPair(nums: list[int], target: int) -> list[int]:
     # Your code here
     pass
 `,
