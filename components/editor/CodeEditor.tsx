@@ -1,11 +1,7 @@
 "use client";
 
-import { useMemo, useRef, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
-import { python } from "@codemirror/lang-python";
-import { cpp } from "@codemirror/lang-cpp";
-import { java } from "@codemirror/lang-java";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
 import { SupportedLanguage } from "@/types/problem";
@@ -27,6 +23,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
   ({ value, onChange, language, height = "400px", className = "" }, ref) => {
     const { theme } = useCodeForgeStore();
     const cmRef = useRef<ReactCodeMirrorRef>(null);
+    const [langExtension, setLangExtension] = useState<any[]>([]);
 
     useImperativeHandle(ref, () => ({
       insertText: (text: string) => {
@@ -58,21 +55,59 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
       },
     }));
 
-    const extensions = useMemo(() => {
-      const exts = [];
-      if (language === "javascript") {
-        exts.push(javascript({ jsx: false, typescript: false }));
-      } else if (language === "typescript") {
-        exts.push(javascript({ jsx: false, typescript: true }));
-      } else if (language === "python" || language === "python3") {
-        exts.push(python());
-      } else if (language === "java") {
-        exts.push(java());
-      } else {
-        // C++, C
-        exts.push(cpp());
+    // Lazy load language syntax highlighter on demand to avoid bloating initial bundle
+    useEffect(() => {
+      let isMounted = true;
+
+      async function loadLanguagePack() {
+        try {
+          const l = language.toLowerCase();
+          if (l === "javascript" || l === "js") {
+            const { javascript } = await import("@codemirror/lang-javascript");
+            if (isMounted) setLangExtension([javascript({ jsx: false, typescript: false })]);
+          } else if (l === "typescript" || l === "ts") {
+            const { javascript } = await import("@codemirror/lang-javascript");
+            if (isMounted) setLangExtension([javascript({ jsx: false, typescript: true })]);
+          } else if (l === "python" || l === "python3" || l === "py") {
+            const { python } = await import("@codemirror/lang-python");
+            if (isMounted) setLangExtension([python()]);
+          } else if (l === "cpp" || l === "c") {
+            const { cpp } = await import("@codemirror/lang-cpp");
+            if (isMounted) setLangExtension([cpp()]);
+          } else if (
+            l === "java" ||
+            l === "csharp" ||
+            l === "cs" ||
+            l === "kotlin" ||
+            l === "scala" ||
+            l === "dart" ||
+            l === "swift" ||
+            l === "d" ||
+            l === "objectivec"
+          ) {
+            const { java } = await import("@codemirror/lang-java");
+            if (isMounted) setLangExtension([java()]);
+          } else if (l === "go") {
+            const { go } = await import("@codemirror/lang-go");
+            if (isMounted) setLangExtension([go()]);
+          } else if (l === "rust" || l === "rs") {
+            const { rust } = await import("@codemirror/lang-rust");
+            if (isMounted) setLangExtension([rust()]);
+          } else if (l === "php") {
+            const { php } = await import("@codemirror/lang-php");
+            if (isMounted) setLangExtension([php()]);
+          } else {
+            if (isMounted) setLangExtension([]);
+          }
+        } catch {
+          if (isMounted) setLangExtension([]);
+        }
       }
-      return exts;
+
+      loadLanguagePack();
+      return () => {
+        isMounted = false;
+      };
     }, [language]);
 
     return (
@@ -81,7 +116,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
           ref={cmRef}
           value={value}
           height={height}
-          extensions={extensions}
+          extensions={langExtension}
           theme={theme === "dark" ? oneDark : "light"}
           onChange={onChange}
           basicSetup={{

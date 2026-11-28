@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "eval:hints": "node scripts/eval-hints.js",
-    "test:runners": "node scripts/test-runners.js"
+    "test:runners": "node scripts/test-runners.js",
+    "verify:languages": "node scripts/verify-languages.js"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",

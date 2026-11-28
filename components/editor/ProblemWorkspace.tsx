@@ -37,6 +37,9 @@ import { judge0Runner } from "@/lib/runners/judge0Runner";
 import { RunnerResponse } from "@/lib/runners/types";
 import { LEETCODE_LANGUAGES, SupportedLanguage } from "@/types/problem";
 import { getStarterCode } from "@/lib/codeTemplates";
+import { LanguageSelectorModal } from "@/components/editor/LanguageSelectorModal";
+import { LANGUAGES_MAP, getLanguageConfig } from "@/lib/runners/languages.config";
+import { PROBLEM_IO_SPECS } from "@/data/problems/ioSpecs";
 
 interface ProblemWorkspaceProps {
   slug: string;
@@ -57,8 +60,22 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   } = useCodeForgeStore();
 
   // Local component states
-  const [language, setLanguage] = useState<SupportedLanguage>("python3");
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [language, setLanguage] = useState<SupportedLanguage>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedPerProblem = localStorage.getItem(`codeforge_lang_${slug}`);
+        if (savedPerProblem && LANGUAGES_MAP[savedPerProblem]?.enabled) {
+          return savedPerProblem;
+        }
+        const savedGlobal = localStorage.getItem("codeforge_last_language");
+        if (savedGlobal && LANGUAGES_MAP[savedGlobal]?.enabled) {
+          return savedGlobal;
+        }
+      } catch {}
+    }
+    return "python3";
+  });
+  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
   const [code, setCode] = useState<string>("");
   const [mobileTab, setMobileTab] = useState<"description" | "hints" | "editor" | "results">("description");
   const [leftTab, setLeftTab] = useState<"description" | "hints">("description");
@@ -73,26 +90,48 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   const [customInputText, setCustomInputText] = useState("");
 
   const editorRef = useRef<CodeEditorHandle>(null);
-  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHydrated();
   }, [setHydrated]);
 
-  // Close language dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
-        setLangDropdownOpen(false);
-      }
+  const hasIoSpec = Boolean(problem && PROBLEM_IO_SPECS[problem.slug]);
+
+  const handleSelectLanguage = (newLang: string) => {
+    if (!problem) return;
+    const isBrowserOrLegacy =
+      newLang === "javascript" ||
+      newLang === "typescript" ||
+      newLang === "python3" ||
+      newLang === "python";
+
+    if (!hasIoSpec && !isBrowserOrLegacy) {
+      alert(
+        "This problem does not have standard stdin/stdout test specs yet and currently supports JavaScript, TypeScript, and Python 3. Please select an IO-supported problem to practice in " +
+          (LANGUAGES_MAP[newLang]?.label || newLang) +
+          "."
+      );
+      return;
     }
-    if (langDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+
+    if (code) {
+      saveCodeDraft(problem.slug, language, code);
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [langDropdownOpen]);
+
+    setLanguage(newLang);
+    try {
+      localStorage.setItem(`codeforge_lang_${problem.slug}`, newLang);
+      localStorage.setItem("codeforge_last_language", newLang);
+    } catch {}
+
+    const savedDraft = userCodeDrafts[problem.slug]?.[newLang];
+    if (savedDraft) {
+      setCode(savedDraft);
+    } else {
+      setCode(getStarterCode(problem, newLang));
+    }
+    setResults(null);
+  };
 
   // Pyodide status listener
   useEffect(() => {
@@ -308,12 +347,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   }, [results, problem.testCases]);
 
   const isSolved = Boolean(solvedProblems[problem.slug]);
-  const currentLangMeta =
-    LEETCODE_LANGUAGES.find((l) => l.id === language) ||
-    LEETCODE_LANGUAGES.find((l) => l.id === "python3");
-
-  const col1 = LEETCODE_LANGUAGES.filter((l) => l.column === 1);
-  const col2 = LEETCODE_LANGUAGES.filter((l) => l.column === 2);
+  const currentLangConfig = LANGUAGES_MAP[language] || LANGUAGES_MAP["python3"];
 
   return (
     <div
@@ -614,90 +648,26 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 <span>Code</span>
               </span>
 
-              {/* 2-Column Verified Language Selector Dropdown */}
-              <div className="relative" ref={langDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setLangDropdownOpen((prev) => !prev)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary border border-surface-border hover:border-forge-cyan/50 text-xs font-mono font-semibold text-slate-900 dark:text-white hover:text-forge-cyan transition-all shadow-sm"
-                >
-                  <span>{currentLangMeta?.name || "Python 3"}</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-500 dark:text-gray-400 transition-transform ${
-                      langDropdownOpen ? "rotate-180 text-forge-cyan" : ""
-                    }`}
-                  />
-                </button>
+              {/* Searchable Language Modal Picker Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsLangModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary border border-surface-border hover:border-forge-cyan/50 text-xs font-mono font-semibold text-slate-900 dark:text-white hover:text-forge-cyan transition-all shadow-sm"
+              >
+                <span>{currentLangConfig?.label || "Python 3"}</span>
+                <span className="text-[10px] text-slate-500 dark:text-gray-400 font-normal hidden sm:inline">
+                  ({currentLangConfig?.version || "3.12"})
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
+              </button>
 
-                {/* Floating 2-Column Menu */}
-                {langDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 z-50 w-[290px] sm:w-[380px] p-2.5 rounded-2xl bg-surface border border-surface-border shadow-2xl grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[420px] overflow-y-auto">
-                    {/* Column 1: Client Runtimes */}
-                    <div className="space-y-1">
-                      <div className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-forge-cyan font-bold">
-                        Client 0ms
-                      </div>
-                      {col1.map((l) => (
-                        <button
-                          key={l.id}
-                          type="button"
-                          onClick={() => {
-                            setLanguage(l.id);
-                            setLangDropdownOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
-                            language === l.id || (language === "python" && l.id === "python3")
-                              ? "bg-forge-cyan/15 text-forge-cyan font-bold"
-                              : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
-                          }`}
-                        >
-                          <div className="flex flex-col">
-                            <span>{l.name}</span>
-                            <span className="text-[10px] text-slate-500 dark:text-gray-400 font-normal">
-                              {l.badge}
-                            </span>
-                          </div>
-                          {(language === l.id || (language === "python" && l.id === "python3")) && (
-                            <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Column 2: Cloud Compilers */}
-                    <div className="space-y-1 sm:border-l border-surface-border/50 sm:pl-2">
-                      <div className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold">
-                        Cloud Engine
-                      </div>
-                      {col2.map((l) => (
-                        <button
-                          key={l.id}
-                          type="button"
-                          onClick={() => {
-                            setLanguage(l.id);
-                            setLangDropdownOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-colors ${
-                            language === l.id
-                              ? "bg-forge-cyan/15 text-forge-cyan font-bold"
-                              : "text-slate-700 hover:text-slate-950 dark:text-gray-300 dark:hover:text-white hover:bg-surface-secondary/70"
-                          }`}
-                        >
-                          <div className="flex flex-col">
-                            <span>{l.name}</span>
-                            <span className="text-[10px] text-slate-500 dark:text-gray-400 font-normal">
-                              {l.badge}
-                            </span>
-                          </div>
-                          {language === l.id && (
-                            <Check className="w-3.5 h-3.5 text-forge-cyan shrink-0" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <LanguageSelectorModal
+                isOpen={isLangModalOpen}
+                onClose={() => setIsLangModalOpen(false)}
+                selectedLanguage={language}
+                onSelectLanguage={handleSelectLanguage}
+                hasIoSpec={hasIoSpec}
+              />
 
               {/* Status / Runtime Badge */}
               {language === "python3" || language === "python" ? (
@@ -715,7 +685,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                   ) : pyodideStatus === "error" ? (
                     <>
                       <span className="w-2 h-2 rounded-full bg-forge-amber" />
-                      <span className="text-forge-amber hidden sm:inline">Cloud 3.12 Ready</span>
+                      <span className="text-forge-amber hidden sm:inline">Python 3.12 Cloud Ready</span>
                     </>
                   ) : (
                     <>
@@ -732,7 +702,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
               ) : (
                 <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-700 dark:text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Cloud Compiler Ready</span>
+                  <span>Cloud {currentLangConfig?.version || "Ready"}</span>
                 </div>
               )}
             </div>
@@ -788,7 +758,14 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           {/* Action Execution Bar */}
           <div className="border-t border-b border-surface-border bg-surface/90 px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
             <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400 hidden sm:inline">
-              Runtime: {currentLangMeta?.runtimeLabel.replace(/^Runtime:\s*/, "") || "Sandboxed Web Worker"}
+              Runtime:{" "}
+              {language === "python3" || language === "python"
+                ? "Python 3.12 (Zero-Cost WASM / Cloud)"
+                : language === "javascript"
+                ? "Node.js 22.8 / Sandboxed Web Worker"
+                : language === "typescript"
+                ? "TypeScript 5.6.2 (Browser Sandbox)"
+                : `${currentLangConfig?.label} ${currentLangConfig?.version || ""} (Isolated Judge)`}
             </span>
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">

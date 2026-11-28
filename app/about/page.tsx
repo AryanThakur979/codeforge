@@ -11,7 +11,14 @@ import {
   Zap,
   Github,
   Globe,
+  CheckCircle2,
 } from "lucide-react";
+import {
+  SUPPORTED_LANGUAGES_COUNT,
+  TIER1_LANGUAGES,
+  TIER2_LANGUAGES,
+  TIER3_LANGUAGES,
+} from "@/lib/runners/languages.config";
 
 export const metadata: Metadata = {
   title: `About ${siteConfig.name} — Free Forever Coding Education`,
@@ -96,7 +103,7 @@ export default function AboutPage() {
             <Zap className="w-6 h-6 text-forge-amber" />
             <h4 className="text-sm font-bold text-slate-900 dark:text-white">Multi-Language Execution Runtimes</h4>
             <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed">
-              6 core programming languages supported including Python 3, JavaScript, TypeScript, C++, Java, and C with zero setup and zero subscription fees.
+              {SUPPORTED_LANGUAGES_COUNT}+ verified programming languages supported across 3 execution tiers: in-browser WebAssembly, modern system runtimes, and classic languages with zero subscription fees.
             </p>
           </div>
 
@@ -107,6 +114,119 @@ export default function AboutPage() {
               Futuristic cyberpunk dark mode, glowing accents, 3D interactive graphics, and smooth
               typography designed for focused algorithmic immersion.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Supported Languages Section */}
+      <div className="rounded-3xl border border-surface-border bg-surface/50 p-6 sm:p-8 backdrop-blur-xl space-y-6 shadow-glow-card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-border">
+          <div className="flex items-center gap-3">
+            <Terminal className="w-6 h-6 text-forge-cyan" />
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Verified Supported Languages ({SUPPORTED_LANGUAGES_COUNT})
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-gray-400">
+                Automated test verification against real compiler and interpreter runtimes.
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-auto px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+            100% Tested &amp; Active
+          </span>
+        </div>
+
+        {/* Tier 1 */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-forge-cyan" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-forge-cyan">
+              Tier 1: Core Foundation Languages ({TIER1_LANGUAGES.length})
+            </h3>
+            <span className="text-[10px] text-slate-500 dark:text-gray-400">
+              — Zero-latency client sandbox or high-volume runtimes
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+            {TIER1_LANGUAGES.map((l) => (
+              <div
+                key={l.key}
+                className="p-3 rounded-xl border border-surface-border bg-surface/60 flex flex-col justify-between space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">
+                    {l.label}
+                  </span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-forge-cyan" />
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-gray-400 font-mono truncate">
+                  {l.version}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tier 2 */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              Tier 2: Modern &amp; Popular Languages ({TIER2_LANGUAGES.length})
+            </h3>
+            <span className="text-[10px] text-slate-500 dark:text-gray-400">
+              — Standard input-reading pattern library
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+            {TIER2_LANGUAGES.map((l) => (
+              <div
+                key={l.key}
+                className="p-3 rounded-xl border border-surface-border bg-surface/60 flex flex-col justify-between space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">
+                    {l.label}
+                  </span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-gray-400 font-mono truncate">
+                  {l.version}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tier 3 */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Tier 3: Classic, Systems &amp; Functional ({TIER3_LANGUAGES.length})
+            </h3>
+            <span className="text-[10px] text-slate-500 dark:text-gray-400">
+              — Verified stdin/stdout execution engines
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+            {TIER3_LANGUAGES.map((l) => (
+              <div
+                key={l.key}
+                className="p-3 rounded-xl border border-surface-border bg-surface/60 flex flex-col justify-between space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">
+                    {l.label}
+                  </span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-gray-400 font-mono truncate">
+                  {l.version}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

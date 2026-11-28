@@ -1,13 +1,8 @@
+import { ENABLED_LANGUAGES } from "@/lib/runners/languages.config";
+
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
-export type SupportedLanguage =
-  | "python3"
-  | "python"
-  | "javascript"
-  | "typescript"
-  | "cpp"
-  | "java"
-  | "c";
+export type SupportedLanguage = string;
 
 export interface LanguageInfo {
   id: SupportedLanguage;
@@ -17,67 +12,21 @@ export interface LanguageInfo {
   badge: string;
   runtimeLabel: string;
   isBrowserExecution?: boolean;
+  tier?: number;
+  version?: string;
 }
 
-export const LEETCODE_LANGUAGES: LanguageInfo[] = [
-  // Column 1: High-Speed In-Browser Client Engines (0ms Network Latency)
-  {
-    id: "python3",
-    name: "Python 3",
-    column: 1,
-    extension: ".py",
-    badge: "Pyodide WASM",
-    runtimeLabel: "Python 3.12 (In-Browser Pyodide WASM)",
-    isBrowserExecution: true,
-  },
-  {
-    id: "javascript",
-    name: "JavaScript",
-    column: 1,
-    extension: ".js",
-    badge: "0ms Worker",
-    runtimeLabel: "JavaScript (Node.js 22 Compatible Worker)",
-    isBrowserExecution: true,
-  },
-  {
-    id: "typescript",
-    name: "TypeScript",
-    column: 1,
-    extension: ".ts",
-    badge: "TS 5.6",
-    runtimeLabel: "TypeScript 5.6 (Client-Side Worker)",
-    isBrowserExecution: true,
-  },
-
-  // Column 2: Zero-Cost Cloud Compilers (GCC 14.1 / OpenJDK 17)
-  {
-    id: "cpp",
-    name: "C++",
-    column: 2,
-    extension: ".cpp",
-    badge: "GCC 14.1",
-    runtimeLabel: "C++ (GCC 14.1.0 Cloud)",
-    isBrowserExecution: false,
-  },
-  {
-    id: "java",
-    name: "Java",
-    column: 2,
-    extension: ".java",
-    badge: "JDK 17",
-    runtimeLabel: "Java (OpenJDK 17.0.6 Cloud)",
-    isBrowserExecution: false,
-  },
-  {
-    id: "c",
-    name: "C",
-    column: 2,
-    extension: ".c",
-    badge: "GCC 14.1",
-    runtimeLabel: "C (GCC 14.1.0 Cloud)",
-    isBrowserExecution: false,
-  },
-];
+export const LEETCODE_LANGUAGES: LanguageInfo[] = ENABLED_LANGUAGES.map((l) => ({
+  id: l.key,
+  name: l.label,
+  column: l.isBrowserExecution ? 1 : 2,
+  extension: l.extension,
+  badge: l.badge,
+  runtimeLabel: `${l.label} (${l.version})`,
+  isBrowserExecution: l.isBrowserExecution,
+  tier: l.tier,
+  version: l.version,
+}));
 
 // Backwards compatibility alias
 export const SUPPORTED_LANGUAGES = LEETCODE_LANGUAGES;

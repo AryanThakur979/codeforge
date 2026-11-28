@@ -19,6 +19,7 @@ import {
 import { problems } from "@/data/problems";
 import { ProblemCard } from "@/components/problems/ProblemCard";
 import { useCodeForgeStore } from "@/store/useCodeForgeStore";
+import { SUPPORTED_LANGUAGES_COUNT } from "@/lib/runners/languages.config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -148,7 +149,7 @@ export default function ProblemsPage() {
               Algorithmic Problem Archive
             </h1>
             <p className="text-sm text-slate-600 dark:text-gray-400 max-w-xl">
-              Sharpen your intuition across 3,000+ data structure &amp; algorithm patterns with multi-language execution in Python 3, JavaScript, TypeScript, C++, Java, and C.
+              Sharpen your intuition across 3,000+ data structure &amp; algorithm patterns with multi-language execution in {SUPPORTED_LANGUAGES_COUNT}+ verified programming languages including Python 3, JavaScript, TypeScript, C++, Java, Go, Rust, and more.
             </p>
           </div>
 

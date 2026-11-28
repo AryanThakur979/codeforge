@@ -22,8 +22,10 @@ import {
 // Rate limiting & Quotas
 const RATE_LIMIT_SALT = process.env.RATE_LIMIT_SALT || "codeforge_judge_salt_2026";
 const GLOBAL_DAILY_LIMIT = parseInt(process.env.CODE_DAILY_LIMIT || "1500", 10);
-const PER_IP_MIN_LIMIT = 15;
-const PER_IP_DAY_LIMIT = 120;
+const PER_IP_MIN_LIMIT_TIER1_2 = 15;
+const PER_IP_DAY_LIMIT_TIER1_2 = 120;
+const PER_IP_MIN_LIMIT_TIER3 = 5;
+const PER_IP_DAY_LIMIT_TIER3 = 25;
 
 interface RateCounter {
   minCount: number;
@@ -43,7 +45,7 @@ interface CachedRun {
 }
 const runCache = new Map<string, CachedRun>();
 
-function checkRateLimit(ip: string): { allowed: boolean; reason?: string } {
+function checkRateLimit(ip: string, tier: number = 1): { allowed: boolean; reason?: string } {
   const now = Date.now();
 
   // Reset global count if day expired
@@ -85,19 +87,22 @@ function checkRateLimit(ip: string): { allowed: boolean; reason?: string } {
     record.dayResetAt = now + 24 * 60 * 60 * 1000;
   }
 
-  if (record.minCount >= PER_IP_MIN_LIMIT) {
+  const minLimit = tier === 3 ? PER_IP_MIN_LIMIT_TIER3 : PER_IP_MIN_LIMIT_TIER1_2;
+  const dayLimit = tier === 3 ? PER_IP_DAY_LIMIT_TIER3 : PER_IP_DAY_LIMIT_TIER1_2;
+
+  if (record.minCount >= minLimit) {
     return {
       allowed: false,
       reason:
-        "Rate limit exceeded (15 executions per minute). Please wait a few seconds before retrying.",
+        `Rate limit exceeded (${minLimit} executions per minute for Tier ${tier} languages). Please wait a few seconds before retrying.`,
     };
   }
 
-  if (record.dayCount >= PER_IP_DAY_LIMIT) {
+  if (record.dayCount >= dayLimit) {
     return {
       allowed: false,
       reason:
-        "Daily personal limit reached (120 cloud executions per day). Please switch to in-browser Python 3 or JavaScript for unlimited zero-cost runs.",
+        `Daily limit reached (${dayLimit} executions per day for Tier ${tier} languages). Please switch to in-browser Python 3 or JavaScript for unlimited zero-cost runs.`,
     };
   }
 
@@ -142,6 +147,105 @@ function parseCompilationError(rawMessage: string, lang: string): CompilationDet
         message: match[2].trim(),
       });
     }
+  } else if (lang === "rust") {
+    // --> solution.rs:12:5 or solution.rs:12:5: error: ...
+    const rustRegex = /(?:-->\s*)?(?:[./\w-]+\.rs):(\d+):(\d+)(?:[^\n]*\n\s*\|)?\s*(?:error(?:\[[^\]]+\])?:?\s*([^\n]+))?/gi;
+    let match;
+    while ((match = rustRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: parseInt(match[2], 10),
+        message: (match[3] || "Compile error").trim(),
+      });
+    }
+  } else if (lang === "go") {
+    // ./solution.go:12:5: undefined: x
+    const goRegex = /(?:[./\w-]+\.go):(\d+):(?:(\d+):)?\s*([^\n]+)/gi;
+    let match;
+    while ((match = goRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: match[2] ? parseInt(match[2], 10) : undefined,
+        message: match[3].trim(),
+      });
+    }
+  } else if (lang === "csharp" || lang === "vb") {
+    // Solution.cs(12,5): error CS...: ...
+    const csRegex = /(?:[./\w-]+\.(?:cs|vb))\s*\((\d+),(\d+)\):\s*(error[^\n]+)/gi;
+    let match;
+    while ((match = csRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: parseInt(match[2], 10),
+        message: match[3].trim(),
+      });
+    }
+  } else if (lang === "kotlin") {
+    // Solution.kt:12:5: error: unresolved reference: x
+    const ktRegex = /(?:[./\w-]+\.kt):(\d+):(?:(\d+):)?\s*(error:[^\n]+)/gi;
+    let match;
+    while ((match = ktRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: match[2] ? parseInt(match[2], 10) : undefined,
+        message: match[3].trim(),
+      });
+    }
+  } else if (lang === "swift") {
+    // solution.swift:12:5: error: ...
+    const swiftRegex = /(?:[./\w-]+\.swift):(\d+):(?:(\d+):)?\s*(error:[^\n]+)/gi;
+    let match;
+    while ((match = swiftRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: match[2] ? parseInt(match[2], 10) : undefined,
+        message: match[3].trim(),
+      });
+    }
+  } else if (lang === "typescript") {
+    // solution.ts:12:5 - error TS...: ...
+    const tsRegex = /(?:[./\w-]+\.ts):(\d+):(\d+)\s*-\s*(error\s+TS[^\n]+)/gi;
+    let match;
+    while ((match = tsRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: parseInt(match[2], 10),
+        message: match[3].trim(),
+      });
+    }
+  } else if (lang === "php") {
+    // Parse error: syntax error, unexpected ... in solution.php on line 12
+    const phpRegex = /(?:syntax error[^\n]+)in\s+[^\n]+\.php\s+on\s+line\s+(\d+)/gi;
+    let match;
+    while ((match = phpRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        message: "Syntax error on line " + match[1],
+      });
+    }
+  } else if (lang === "ruby") {
+    // solution.rb:12: syntax error, ...
+    const rubyRegex = /(?:[./\w-]+\.rb):(\d+):\s*([^\n]+)/gi;
+    let match;
+    while ((match = rubyRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        message: match[2].trim(),
+      });
+    }
+  }
+
+  // Fallback generic error location finder
+  if (errors.length === 0) {
+    const genericRegex = /(?:line|Line)\s+(\d+)(?:[:,\s]+(?:col|column)\s+(\d+))?[:\s]+([^\n]+)/gi;
+    let match;
+    while ((match = genericRegex.exec(rawMessage)) !== null) {
+      errors.push({
+        line: parseInt(match[1], 10),
+        column: match[2] ? parseInt(match[2], 10) : undefined,
+        message: match[3].trim(),
+      });
+    }
   }
 
   return {
@@ -178,6 +282,18 @@ function parseRuntimeError(stderr: string, statusDesc: string): RuntimeErrorDeta
   } else if (stderr.includes("ZeroDivisionError:")) {
     type = "ZeroDivisionError";
     explanation = "Python integer division or modulo by zero.";
+  } else if (stderr.includes("panic: runtime error:") || stderr.includes("panic:")) {
+    type = "Go Panic (Runtime Error)";
+    explanation = "Go encountered an unhandled panic, such as index out of range or nil pointer dereference.";
+  } else if (stderr.includes("panicked at")) {
+    type = "Rust Panic (Runtime Error)";
+    explanation = "Rust panicked, likely due to an unwrap() on None/Err or an out-of-bounds array access.";
+  } else if (stderr.includes("Unhandled exception. System.") || stderr.includes("System.IndexOutOfRangeException")) {
+    type = "Unhandled Exception (.NET)";
+    explanation = ".NET runtime exception, such as IndexOutOfRangeException or NullReferenceException.";
+  } else if (stderr.includes("Fatal error:") || stderr.includes("Swift runtime failure:")) {
+    type = "Swift Fatal Error";
+    explanation = "Swift runtime failure, such as force-unwrapping a nil optional or out-of-bounds indexing.";
   }
 
   // Clean traceback by removing internal runner paths
@@ -200,21 +316,6 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "127.0.0.1";
-
-    const rateCheck = checkRateLimit(ip);
-    if (!rateCheck.allowed) {
-      return NextResponse.json(
-        {
-          verdict: "Provider Unavailable / Rate Limited" as JudgeVerdict,
-          allPassed: false,
-          totalRuntimeMs: 0,
-          results: [],
-          errorSummary: rateCheck.reason,
-          mode: "run",
-        } satisfies JudgeResponse,
-        { status: 429 }
-      );
-    }
 
     const body = await req.json();
     const {
@@ -260,6 +361,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: `Unsupported or disabled language: ${rawLang}` },
         { status: 400 }
+      );
+    }
+
+    // Tier-aware rate limiting check
+    const rateCheck = checkRateLimit(ip, langConfig.tier);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          verdict: "Provider Unavailable / Rate Limited" as JudgeVerdict,
+          allPassed: false,
+          totalRuntimeMs: 0,
+          results: [],
+          errorSummary: rateCheck.reason,
+          mode: "run",
+        } satisfies JudgeResponse,
+        { status: 429 }
       );
     }
 
@@ -334,9 +451,11 @@ export async function POST(req: NextRequest) {
       if (apiHost) requestHeaders["X-RapidAPI-Host"] = apiHost;
     }
 
-    // Execute tests against Judge0
-    const cpuLimit = langKey === "java" ? 3.5 : 2.0;
-    const memoryLimitKb = 256000; // 256 MB
+    // Execute tests against Judge0 with language-specific resource allocation
+    const baseCpu = 2.0;
+    const cpuLimit = Math.max(2.0, Number((baseCpu * (langConfig.timeMultiplier || 1.0)).toFixed(1)));
+    const memoryLimitKb = langConfig.memoryLimit || 256000;
+    const wallTimeLimit = Math.max(15.0, Math.round(cpuLimit * 3.5));
 
     const results: IOExecutionResult[] = [];
     let allPassed = true;
@@ -348,7 +467,7 @@ export async function POST(req: NextRequest) {
 
     for (const test of testsToRun) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
+      const timeout = setTimeout(() => controller.abort(), Math.round(wallTimeLimit * 1000));
 
       let judgeRes: Response;
       try {
@@ -362,7 +481,7 @@ export async function POST(req: NextRequest) {
               language_id: langConfig.providerLanguageId,
               stdin: test.input,
               cpu_time_limit: cpuLimit,
-              wall_time_limit: 15.0,
+              wall_time_limit: wallTimeLimit,
               memory_limit: memoryLimitKb,
             }),
             signal: controller.signal,

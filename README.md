@@ -68,10 +68,42 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start cod
 # Run multi-language runner diagnostics
 npm run test:runners
 
+# Run automated multi-language judge verification across 30+ compilers
+npm run verify:languages
+
 # Production build (passes with 0 environment variables)
 npm run build
 npm run start
 ```
+
+---
+
+## 🌐 Multi-Language Execution Judge (33+ Verified Runtimes)
+
+CodeForge features a high-reliability execution architecture supporting **33 verified programming languages** partitioned into three operational tiers:
+
+### 1. The Three Operational Tiers
+- **Tier 1: Core Foundation (6 Languages)**:
+  - **Python 3** (`3.12.5`): Instant client WebAssembly (Pyodide) with automatic Cloud fallback.
+  - **JavaScript** (`Node.js 22.8`): Isolated Web Worker client sandbox with 0ms latency.
+  - **TypeScript** (`5.6.2`): In-browser client transpilation and isolated execution.
+  - **C++** (`GCC 14.1.0`), **C** (`GCC 14.1.0`), **Java** (`OpenJDK 17.0.6`): High-speed server judge execution.
+- **Tier 2: Modern & Popular (11 Languages)**:
+  - **Go** (`1.23.5`), **Rust** (`1.85.0`), **C#** (`Mono 6.6.0`), **Kotlin** (`2.1.10`), **Swift** (`5.2.3`), **Ruby** (`2.7.0`), **PHP** (`8.3.11`), **Dart** (`2.19.2`), **Perl** (`5.28.1`), **Lua** (`5.3.5`), **Haskell** (`GHC 8.8.1`).
+  - Pre-configured with idiomatic stdin/stdout input reading patterns.
+- **Tier 3: Classic, Systems & Functional (16 Languages)**:
+  - **Elixir** (`1.9.4`), **Erlang** (`OTP 22.2`), **Clojure** (`1.10.1`), **F#** (`.NET Core 3.1`), **Groovy** (`3.0.3`), **D** (`DMD 2.089.1`), **Fortran** (`GFortran 9.2`), **Pascal** (`FPC 3.0.4`), **Bash** (`5.0.0`), **Basic** (`FBC 1.07.1`), **OCaml** (`4.09.0`), **Common Lisp** (`SBCL 2.0.0`), **Visual Basic .NET** (`vbnc`), **Objective-C** (`Clang 7.0.1`), **Octave** (`5.1.0`), **Assembly** (`NASM 2.14.02`).
+
+### 2. Provider Limits, Quotas & Terms
+- **Provider**: Judge0 CE (`https://ce.judge0.com`) or RapidAPI Judge0 (`https://judge0-ce.p.rapidapi.com`).
+- **Terms & License**: Judge0 CE is open-source (GPL-3.0) and public instances are freely accessible for education and open coding platforms.
+- **Safety Quotas & Rate Limits**:
+  - Source code maximum size: 20 KB.
+  - Custom standard input maximum size: 10 KB.
+  - Tier 1 & 2 per-visitor limit: 15 runs/min, 120 runs/day.
+  - Tier 3 per-visitor limit: 5 runs/min, 25 runs/day.
+  - Global community cap: `CODE_DAILY_LIMIT=1500` runs/day.
+- **Instant Fallback**: If the external cloud judge is down or rate-limited, students can always switch to Python 3 or JavaScript for 100% client-side, zero-cost runs.
 
 ---
 

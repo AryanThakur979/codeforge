@@ -1,3 +1,5 @@
+import { SUPPORTED_LANGUAGES_COUNT } from "@/lib/runners/languages.config";
+
 export const siteConfig = {
   name: "CodeForge",
   tagline: "The Futuristic, Zero-Cost Coding Practice Platform",
@@ -20,7 +22,7 @@ export const siteConfig = {
   ],
   stats: {
     problemsCount: "3,000+",
-    languagesSupported: "6 Multi-Language Runtimes",
+    languagesSupported: `${SUPPORTED_LANGUAGES_COUNT}+ Verified Languages`,
     cost: "100% Free",
     runtimeTarget: "0ms Backend Wait",
   },
