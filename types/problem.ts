@@ -148,6 +148,22 @@ export interface AIHintResponse {
   followUpsRemaining?: number;
 }
 
+export interface ProblemIOTest {
+  id: number;
+  input: string;
+  expectedOutput: string;
+  hidden: boolean;
+  description?: string;
+}
+
+export interface ProblemIOSpec {
+  inputFormat: string;
+  outputFormat: string;
+  tests: ProblemIOTest[];
+  numericTolerance?: number;
+  starterTemplates?: Partial<Record<SupportedLanguage, string>>;
+}
+
 export interface Problem {
   id: string;
   slug: string;
@@ -167,4 +183,5 @@ export interface Problem {
     [key: string]: string | undefined;
   };
   testCases: TestCase[];
+  ioSpec?: ProblemIOSpec;
 }

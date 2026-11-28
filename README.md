@@ -63,8 +63,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to start coding immediately.
 
-### 3. Production Build
+### 3. Production Build & Test
 ```bash
+# Run multi-language runner diagnostics
+npm run test:runners
+
+# Production build (passes with 0 environment variables)
 npm run build
 npm run start
 ```

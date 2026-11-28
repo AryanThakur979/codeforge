@@ -1,7 +1,38 @@
 import { CodeRunner, RunnerResponse, ExecutionResult, TestCaseInput } from "./types";
-import { deepEqual } from "@/lib/utils";
 
 const WORKER_SCRIPT = `
+function compareTokens(actual, expected) {
+  const actualStr = typeof actual === "object" ? JSON.stringify(actual) : String(actual ?? "");
+  const expectedStr = typeof expected === "object" ? JSON.stringify(expected) : String(expected ?? "");
+
+  const aTokens = actualStr.trim().split(/\\s+/).filter(Boolean);
+  const eTokens = expectedStr.trim().split(/\\s+/).filter(Boolean);
+
+  if (aTokens.length !== eTokens.length) return false;
+
+  for (let i = 0; i < aTokens.length; i++) {
+    const a = aTokens[i];
+    const e = eTokens[i];
+    if (a === e) continue;
+
+    const numA = Number(a);
+    const numE = Number(e);
+    if (!isNaN(numA) && !isNaN(numE) && Math.abs(numA - numE) <= 1e-5) {
+      continue;
+    }
+
+    if (
+      (a.toLowerCase() === "true" || a.toLowerCase() === "false") &&
+      a.toLowerCase() === e.toLowerCase()
+    ) {
+      continue;
+    }
+
+    return false;
+  }
+  return true;
+}
+
 function deepEqual(a, b) {
   if (a === b) return true;
   if (a == null || b == null) return false;
@@ -33,7 +64,6 @@ self.onmessage = function (e) {
   const { code, functionName, testCases } = e.data;
   const capturedLogs = [];
 
-  // Capture console.log
   const originalLog = console.log;
   console.log = function (...args) {
     try {
@@ -48,68 +78,102 @@ self.onmessage = function (e) {
   };
 
   try {
-    // Instantiate user function
-    const wrappedCode = code + "\\n; return (typeof " + functionName + " !== 'undefined' ? " + functionName + " : null);";
-    const userFn = new Function(wrappedCode)();
-
-    if (typeof userFn !== "function") {
-      self.postMessage({
-        type: "error",
-        error: "Function '" + functionName + "' is not defined or not a function.",
-        logs: capturedLogs,
-      });
-      return;
-    }
-
     const results = [];
     let allPassed = true;
     let totalRuntime = 0;
 
     for (const tc of testCases) {
-      // Deep clone inputs to prevent test case mutation side-effects
-      let clonedInput;
-      try {
-        clonedInput = JSON.parse(JSON.stringify(tc.input));
-      } catch {
-        clonedInput = tc.input;
+      capturedLogs.length = 0; // reset logs per test case
+
+      // Determine stdin string
+      let stdinStr = "";
+      if (typeof tc.input === "string") {
+        stdinStr = tc.input;
+      } else if (Array.isArray(tc.input) && tc.input.length === 1 && typeof tc.input[0] === "string") {
+        stdinStr = tc.input[0];
+      } else if (Array.isArray(tc.input)) {
+        stdinStr = tc.input.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join("\\n");
+      } else {
+        stdinStr = String(tc.input || "");
       }
 
-      const start = performance.now();
-      let actual;
-      let error;
+      // Prepare environment
+      let userFn = null;
+      let actual = null;
       let passed = false;
+      let error = undefined;
+      const start = performance.now();
 
       try {
-        actual = userFn(...clonedInput);
-        const end = performance.now();
-        const duration = end - start;
-        totalRuntime += duration;
+        // Execute with sandboxed environment providing fake require('fs')
+        const fakeFs = {
+          readFileSync: function (fd, enc) {
+            return stdinStr;
+          },
+        };
 
-        passed = deepEqual(actual, tc.expected);
-        if (!passed) allPassed = false;
+        const runnerFn = new Function(
+          "require",
+          "process",
+          code +
+            "; return { " +
+            "fn: typeof " + (functionName || "null") + " === 'function' ? " + (functionName || "null") + " : null, " +
+            "solve: typeof solve === 'function' ? solve : null " +
+            "};"
+        );
 
-        results.push({
-          testCaseId: tc.id,
-          passed,
-          input: tc.input,
-          expected: tc.expected,
-          actual,
-          runtime: duration,
-          logs: [...capturedLogs],
-        });
-      } catch (err) {
-        allPassed = false;
-        results.push({
-          testCaseId: tc.id,
-          passed: false,
-          input: tc.input,
-          expected: tc.expected,
-          actual: null,
-          runtime: performance.now() - start,
-          error: err instanceof Error ? err.message : String(err),
-          logs: [...capturedLogs],
-        });
+        const scope = runnerFn(
+          function (mod) {
+            if (mod === "fs") return fakeFs;
+            return {};
+          },
+          {
+            stdin: {
+              read: () => stdinStr,
+            },
+          }
+        );
+
+        if (scope.fn && Array.isArray(tc.input) && typeof tc.input !== "string") {
+          // Classic function execution
+          let clonedInput;
+          try {
+            clonedInput = JSON.parse(JSON.stringify(tc.input));
+          } catch {
+            clonedInput = tc.input;
+          }
+          actual = scope.fn(...clonedInput);
+          passed = deepEqual(actual, tc.expected) || compareTokens(actual, tc.expected);
+        } else {
+          // Stdin/Stdout execution
+          if (scope.solve) {
+            scope.solve();
+          }
+          const stdoutStr = capturedLogs.join("\\n");
+          actual = stdoutStr;
+          passed = compareTokens(stdoutStr, tc.expected);
+        }
+      } catch (runErr) {
+        passed = false;
+        error = runErr.message || String(runErr);
       }
+
+      const end = performance.now();
+      const duration = end - start;
+      totalRuntime += duration;
+
+      if (!passed) allPassed = false;
+
+      results.push({
+        testCaseId: tc.id,
+        passed,
+        input: tc.input,
+        expected: tc.expected,
+        actual,
+        runtime: duration,
+        logs: [...capturedLogs],
+        error,
+      });
     }
 
     self.postMessage({
@@ -117,142 +181,100 @@ self.onmessage = function (e) {
       results,
       allPassed,
       totalRuntime,
-      logs: capturedLogs,
+      logs: [...capturedLogs],
     });
-  } catch (outerErr) {
+  } catch (err) {
     self.postMessage({
       type: "error",
-      error: outerErr instanceof Error ? outerErr.message : String(outerErr),
+      error: err.message || String(err),
       logs: capturedLogs,
     });
-  } finally {
-    console.log = originalLog;
   }
 };
 `;
 
 export class JavaScriptRunner implements CodeRunner {
-  run(
+  private worker: Worker | null = null;
+
+  private getOrCreateWorker(): Worker {
+    if (!this.worker) {
+      const blob = new Blob([WORKER_SCRIPT], { type: "application/javascript" });
+      const blobUrl = URL.createObjectURL(blob);
+      this.worker = new Worker(blobUrl);
+    }
+    return this.worker;
+  }
+
+  public run(
     code: string,
     functionName: string,
     testCases: TestCaseInput[],
-    timeoutMs = 3000
+    timeoutMs = 8000
   ): Promise<RunnerResponse> {
     return new Promise((resolve) => {
-      let worker: Worker | null = null;
+      const worker = this.getOrCreateWorker();
       let timer: ReturnType<typeof setTimeout> | null = null;
       let isResolved = false;
 
       const cleanup = () => {
         if (timer) clearTimeout(timer);
-        if (worker) {
-          worker.terminate();
-          worker = null;
-        }
       };
 
-      try {
-        const blob = new Blob([WORKER_SCRIPT], { type: "application/javascript" });
-        const blobUrl = URL.createObjectURL(blob);
-        worker = new Worker(blobUrl);
-
-        // Timeout guard (3 seconds hard limit)
-        timer = setTimeout(() => {
-          if (!isResolved) {
-            isResolved = true;
-            cleanup();
-            resolve({
-              results: testCases.map((tc) => ({
-                testCaseId: tc.id,
-                passed: false,
-                input: tc.input,
-                expected: tc.expected,
-                actual: "Time Limit Exceeded",
-                runtime: timeoutMs,
-                logs: [],
-                isTimeout: true,
-                error: `Time Limit Exceeded (${timeoutMs}ms). Possible infinite loop detected.`,
-              })),
-              status: "tle",
-              totalRuntime: timeoutMs,
-              allPassed: false,
-              logs: ["Execution terminated: exceeded 3000ms timeout."],
-              errorSummary: "Time Limit Exceeded: Your code took too long to execute or contains an infinite loop.",
-            });
-          }
-        }, timeoutMs);
-
-        worker.onmessage = (event: MessageEvent) => {
-          if (isResolved) return;
+      timer = setTimeout(() => {
+        if (!isResolved) {
           isResolved = true;
-          const data = event.data;
           cleanup();
+          try {
+            worker.terminate();
+            this.worker = null;
+          } catch {}
 
-          if (data.type === "error") {
+          resolve({
+            results: [],
+            status: "tle",
+            totalRuntime: timeoutMs,
+            allPassed: false,
+            logs: [],
+            errorSummary: `Time Limit Exceeded: JavaScript code execution timed out after ${timeoutMs / 1000}s. Check for infinite loops.`,
+          });
+        }
+      }, timeoutMs);
+
+      const messageHandler = (e: MessageEvent) => {
+        if (!isResolved) {
+          isResolved = true;
+          cleanup();
+          worker.removeEventListener("message", messageHandler);
+
+          const { type, results, allPassed, totalRuntime, logs, error } = e.data;
+
+          if (type === "error") {
             resolve({
-              results: testCases.map((tc) => ({
-                testCaseId: tc.id,
-                passed: false,
-                input: tc.input,
-                expected: tc.expected,
-                actual: null,
-                runtime: 0,
-                logs: data.logs || [],
-                error: data.error,
-              })),
+              results: [],
               status: "error",
               totalRuntime: 0,
               allPassed: false,
-              logs: data.logs || [],
-              errorSummary: data.error,
+              logs: logs || [],
+              errorSummary: error || "JavaScript runtime evaluation error.",
             });
           } else {
             resolve({
-              results: data.results,
-              status: data.allPassed ? "success" : "failed",
-              totalRuntime: Math.round(data.totalRuntime * 100) / 100,
-              allPassed: data.allPassed,
-              logs: data.logs || [],
+              results: results || [],
+              status: allPassed ? "success" : "failed",
+              totalRuntime: Math.round(totalRuntime),
+              allPassed: !!allPassed,
+              logs: logs || [],
             });
           }
-        };
+        }
+      };
 
-        worker.onerror = (err: ErrorEvent) => {
-          if (isResolved) return;
-          isResolved = true;
-          cleanup();
-          resolve({
-            results: testCases.map((tc) => ({
-              testCaseId: tc.id,
-              passed: false,
-              input: tc.input,
-              expected: tc.expected,
-              actual: null,
-              runtime: 0,
-              logs: [],
-              error: err.message || "Worker error",
-            })),
-            status: "error",
-            totalRuntime: 0,
-            allPassed: false,
-            logs: [],
-            errorSummary: err.message || "Worker syntax or runtime error",
-          });
-        };
-
-        // Post work to isolated thread
-        worker.postMessage({ code, functionName, testCases });
-      } catch (e: any) {
-        cleanup();
-        resolve({
-          results: [],
-          status: "error",
-          totalRuntime: 0,
-          allPassed: false,
-          logs: [],
-          errorSummary: e?.message || "Failed to initialize Web Worker",
-        });
-      }
+      worker.addEventListener("message", messageHandler);
+      worker.postMessage({
+        code,
+        functionName,
+        testCases,
+      });
     });
   }
 }

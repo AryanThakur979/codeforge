@@ -48,8 +48,8 @@ self.onmessage = async function (e) {
       const py = await initPyodide();
 
       py.globals.set("_USER_CODE", code);
-      py.globals.set("_FUNCTION_NAME", functionName);
-      py.globals.set("_TEST_CASES_JSON", JSON.stringify(testCases));
+      py.globals.set("_FUNCTION_NAME", functionName || "solve");
+      py.globals.set("_TEST_CASES_JSON", JSON.stringify(testCases || []));
 
       const pythonRunnerCode = \`
 import json
@@ -57,8 +57,27 @@ import sys
 import io
 import time
 
-_captured_stdout = io.StringIO()
+def _compare_tokens(act, exp):
+    act_tokens = str(act).strip().split()
+    exp_tokens = str(exp).strip().split()
+    if len(act_tokens) != len(exp_tokens):
+        return False
+    for a, e in zip(act_tokens, exp_tokens):
+        if a == e:
+            continue
+        try:
+            if abs(float(a) - float(e)) <= 1e-5:
+                continue
+        except Exception:
+            pass
+        if a.lower() in ("true", "false") and a.lower() == e.lower():
+            continue
+        return False
+    return True
+
 _orig_stdout = sys.stdout
+_orig_stdin = sys.stdin
+_captured_stdout = io.StringIO()
 sys.stdout = _captured_stdout
 
 _ns = {
@@ -70,6 +89,7 @@ try:
     exec(_USER_CODE, _ns)
 except Exception as _compile_err:
     sys.stdout = _orig_stdout
+    sys.stdin = _orig_stdin
     _result_payload = json.dumps({
         "type": "error",
         "error": f"Python Syntax/Runtime Error: {str(_compile_err)}",
@@ -77,6 +97,11 @@ except Exception as _compile_err:
     })
 else:
     try:
+        _raw_cases = json.loads(_TEST_CASES_JSON)
+        _results = []
+        _all_passed = True
+        _total_runtime = 0.0
+
         _fn = _ns.get(_FUNCTION_NAME) or globals().get(_FUNCTION_NAME)
         if not _fn and "Solution" in _ns:
             try:
@@ -85,70 +110,98 @@ else:
             except Exception:
                 pass
 
-        if not _fn or not callable(_fn):
-            sys.stdout = _orig_stdout
-            _result_payload = json.dumps({
-                "type": "error",
-                "error": f"Function '{_FUNCTION_NAME}' is not defined or not callable.",
-                "logs": _captured_stdout.getvalue().splitlines()
-            })
-        else:
-            _raw_cases = json.loads(_TEST_CASES_JSON)
-            _results = []
-            _all_passed = True
-            _total_runtime = 0.0
+        for _tc in _raw_cases:
+            _t_id = _tc["id"]
+            _inputs = _tc.get("input")
+            _expected = _tc.get("expected")
 
-            for _tc in _raw_cases:
-                _t_id = _tc["id"]
-                _inputs = _tc["input"]
-                _expected = _tc["expected"]
+            if isinstance(_inputs, str):
+                _stdin_str = _inputs
+            elif isinstance(_inputs, list) and len(_inputs) == 1 and isinstance(_inputs[0], str):
+                _stdin_str = _inputs[0]
+            elif isinstance(_inputs, list):
+                _stdin_str = "\\n".join(str(x) for x in _inputs)
+            else:
+                _stdin_str = str(_inputs)
 
-                _t_start = time.perf_counter()
-                try:
-                    _actual = _fn(*_inputs)
+            _tc_stdout = io.StringIO()
+            sys.stdout = _tc_stdout
+            sys.stdin = io.StringIO(_stdin_str)
+
+            _t_start = time.perf_counter()
+            _passed = False
+            _actual = None
+            _error_str = None
+
+            try:
+                if _fn and callable(_fn) and isinstance(_inputs, list) and not isinstance(_inputs, str):
+                    # Classic function signature
+                    _actual_res = _fn(*_inputs)
                     _t_end = time.perf_counter()
                     _duration = (_t_end - _t_start) * 1000.0
                     _total_runtime += _duration
 
-                    # Deep equality normalization (tuples -> lists)
-                    _norm_actual = list(_actual) if isinstance(_actual, tuple) else _actual
+                    _norm_actual = list(_actual_res) if isinstance(_actual_res, tuple) else _actual_res
                     _norm_expected = list(_expected) if isinstance(_expected, tuple) else _expected
-                    _passed = (_norm_actual == _norm_expected)
-                    if not _passed:
-                        _all_passed = False
+                    if _norm_actual == _norm_expected:
+                        _passed = True
+                    elif _compare_tokens(str(_actual_res), str(_expected)):
+                        _passed = True
+                    else:
+                        _passed = False
+                    _actual = _actual_res
+                else:
+                    # Stdin/Stdout competitive programming script
+                    _run_ns = {
+                        "__name__": "__main__",
+                        "__doc__": None,
+                    }
+                    exec(_USER_CODE, _run_ns)
+                    if "solve" in _run_ns and callable(_run_ns["solve"]):
+                        _run_ns["solve"]()
+                    elif "main" in _run_ns and callable(_run_ns["main"]):
+                        _run_ns["main"]()
 
-                    _results.append({
-                        "testCaseId": _t_id,
-                        "passed": _passed,
-                        "input": _inputs,
-                        "expected": _expected,
-                        "actual": _actual,
-                        "runtime": round(_duration, 2),
-                        "logs": _captured_stdout.getvalue().splitlines()
-                    })
-                except Exception as _test_err:
-                    _all_passed = False
-                    _results.append({
-                        "testCaseId": _t_id,
-                        "passed": False,
-                        "input": _inputs,
-                        "expected": _expected,
-                        "actual": None,
-                        "runtime": round((time.perf_counter() - _t_start) * 1000.0, 2),
-                        "error": str(_test_err),
-                        "logs": _captured_stdout.getvalue().splitlines()
-                    })
+                    _t_end = time.perf_counter()
+                    _duration = (_t_end - _t_start) * 1000.0
+                    _total_runtime += _duration
 
-            sys.stdout = _orig_stdout
-            _result_payload = json.dumps({
-                "type": "success",
-                "results": _results,
-                "allPassed": _all_passed,
-                "totalRuntime": round(_total_runtime, 2),
-                "logs": _captured_stdout.getvalue().splitlines()
+                    _out_str = _tc_stdout.getvalue().strip()
+                    _passed = _compare_tokens(_out_str, str(_expected).strip())
+                    _actual = _out_str
+            except Exception as _test_err:
+                _t_end = time.perf_counter()
+                _duration = (_t_end - _t_start) * 1000.0
+                _total_runtime += _duration
+                _passed = False
+                _error_str = str(_test_err)
+
+            if not _passed:
+                _all_passed = False
+
+            _results.append({
+                "testCaseId": _t_id,
+                "passed": _passed,
+                "input": _inputs,
+                "expected": _expected,
+                "actual": _actual,
+                "runtime": round(_duration, 2),
+                "error": _error_str,
+                "logs": _tc_stdout.getvalue().splitlines()
             })
+
+        sys.stdout = _orig_stdout
+        sys.stdin = _orig_stdin
+        _result_payload = json.dumps({
+            "type": "success",
+            "results": _results,
+            "allPassed": _all_passed,
+            "totalRuntime": round(_total_runtime, 2),
+            "logs": _captured_stdout.getvalue().splitlines()
+        })
     except Exception as _run_err:
         sys.stdout = _orig_stdout
+        sys.stdin = _orig_stdin
         _result_payload = json.dumps({
             "type": "error",
             "error": f"Execution error: {str(_run_err)}",
@@ -178,9 +231,7 @@ export class PythonRunner implements CodeRunner {
   private status: PyodideStatus = "idle";
   private statusListeners: Array<(status: PyodideStatus) => void> = [];
 
-  constructor() {
-    // Lazy initialized on first interaction
-  }
+  constructor() {}
 
   public getStatus(): PyodideStatus {
     return this.status;
@@ -231,7 +282,7 @@ export class PythonRunner implements CodeRunner {
     code: string,
     functionName: string,
     testCases: TestCaseInput[],
-    timeoutMs = 3000
+    timeoutMs = 12000
   ): Promise<RunnerResponse> {
     return new Promise((resolve) => {
       const worker = this.getOrCreateWorker();
@@ -242,80 +293,60 @@ export class PythonRunner implements CodeRunner {
         if (timer) clearTimeout(timer);
       };
 
-      // Hard timeout guard (e.g. infinite loops in Python)
       timer = setTimeout(() => {
         if (!isResolved) {
           isResolved = true;
           cleanup();
-          // Terminate unresponsive worker to free memory
-          if (this.worker) {
-            this.worker.terminate();
+          try {
+            worker.terminate();
             this.worker = null;
             this.notifyStatus("idle");
-          }
+          } catch {}
 
           resolve({
-            results: testCases.map((tc) => ({
-              testCaseId: tc.id,
-              passed: false,
-              input: tc.input,
-              expected: tc.expected,
-              actual: "Time Limit Exceeded",
-              runtime: timeoutMs,
-              logs: [],
-              isTimeout: true,
-              error: `Time Limit Exceeded (${timeoutMs}ms). Possible infinite loop in Python code.`,
-            })),
+            results: [],
             status: "tle",
             totalRuntime: timeoutMs,
             allPassed: false,
-            logs: ["Python execution terminated: exceeded 3000ms."],
-            errorSummary: "Time Limit Exceeded: Your Python code took longer than 3.0 seconds to run.",
+            logs: [],
+            errorSummary: `Time Limit Exceeded: Execution took longer than ${timeoutMs / 1000}s. Check for infinite loops.`,
           });
         }
       }, timeoutMs);
 
-      const handleMessage = (event: MessageEvent) => {
-        const data = event.data;
-        if (data?.type === "status") return; // Handled by global listener
+      const messageHandler = (e: MessageEvent) => {
+        const msg = e.data;
+        if (msg.type === "status") {
+          return;
+        }
 
-        if (isResolved) return;
-        isResolved = true;
-        cleanup();
-        worker.removeEventListener("message", handleMessage);
+        if (!isResolved) {
+          isResolved = true;
+          cleanup();
+          worker.removeEventListener("message", messageHandler);
 
-        if (data.type === "error") {
-          resolve({
-            results: testCases.map((tc) => ({
-              testCaseId: tc.id,
-              passed: false,
-              input: tc.input,
-              expected: tc.expected,
-              actual: null,
-              runtime: 0,
-              logs: data.logs || [],
-              error: data.error,
-            })),
-            status: "error",
-            totalRuntime: 0,
-            allPassed: false,
-            logs: data.logs || [],
-            errorSummary: data.error,
-          });
-        } else {
-          resolve({
-            results: data.results || [],
-            status: data.allPassed ? "success" : "failed",
-            totalRuntime: data.totalRuntime || 0,
-            allPassed: data.allPassed,
-            logs: data.logs || [],
-          });
+          if (msg.type === "error") {
+            resolve({
+              results: [],
+              status: "error",
+              totalRuntime: 0,
+              allPassed: false,
+              logs: msg.logs || [],
+              errorSummary: msg.error || "An unknown Python execution error occurred.",
+            });
+          } else if (msg.type === "success") {
+            resolve({
+              results: msg.results || [],
+              status: msg.allPassed ? "success" : "failed",
+              totalRuntime: msg.totalRuntime || 0,
+              allPassed: msg.allPassed ?? false,
+              logs: msg.logs || [],
+            });
+          }
         }
       };
 
-      worker.addEventListener("message", handleMessage);
-
-      // Post execution request
+      worker.addEventListener("message", messageHandler);
       worker.postMessage({
         type: "run",
         code,

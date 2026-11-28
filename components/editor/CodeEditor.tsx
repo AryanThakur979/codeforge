@@ -12,6 +12,7 @@ import { SupportedLanguage } from "@/types/problem";
 
 export interface CodeEditorHandle {
   insertText: (text: string) => void;
+  goToLine: (line: number, column?: number) => void;
 }
 
 interface CodeEditorProps {
@@ -36,6 +37,22 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
         view.dispatch({
           changes: { from, to, insert: text },
           selection: { anchor: from + text.length },
+        });
+        view.focus();
+      },
+      goToLine: (line: number, column?: number) => {
+        const view = cmRef.current?.view;
+        if (!view) return;
+        const doc = view.state.doc;
+        const targetLine = Math.max(1, Math.min(line, doc.lines));
+        const lineObj = doc.line(targetLine);
+        const targetPos = Math.min(
+          lineObj.from + Math.max(0, (column || 1) - 1),
+          lineObj.to
+        );
+        view.dispatch({
+          selection: { anchor: targetPos, head: targetPos },
+          scrollIntoView: true,
         });
         view.focus();
       },

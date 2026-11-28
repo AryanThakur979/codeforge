@@ -69,6 +69,8 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
   const [celebrationOpen, setCelebrationOpen] = useState(false);
   const [lastPassedRuntime, setLastPassedRuntime] = useState(0);
   const [pyodideStatus, setPyodideStatus] = useState<PyodideStatus>("idle");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customInputText, setCustomInputText] = useState("");
 
   const editorRef = useRef<CodeEditorHandle>(null);
   const langDropdownRef = useRef<HTMLDivElement>(null);
@@ -178,7 +180,33 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     }
   };
 
-  const runWithLanguage = async (testCasesToRun: typeof problem.testCases): Promise<RunnerResponse> => {
+  const runWithLanguage = async (
+    testCasesToRun: typeof problem.testCases,
+    mode: "run" | "submit" = "run",
+    customInput?: string
+  ): Promise<RunnerResponse> => {
+    // If custom input is specified, run via judge
+    if (customInput !== undefined) {
+      judge0Runner.setLanguage(language);
+      return await judge0Runner.executeJudge({
+        code,
+        slug: problem.slug,
+        mode: "run",
+        customInput,
+      });
+    }
+
+    if (mode === "submit") {
+      // Submissions execute full test suite (sample + server hidden tests) via judge
+      judge0Runner.setLanguage(language);
+      return await judge0Runner.executeJudge({
+        code,
+        slug: problem.slug,
+        mode: "submit",
+      });
+    }
+
+    // Mode is "run" (sample tests)
     if (language === "javascript") {
       return await jsRunner.run(code, problem.functionName, testCasesToRun);
     } else if (language === "typescript") {
@@ -186,8 +214,13 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     } else if (language === "python3" || language === "python") {
       return await pythonRunner.run(code, problem.functionName, testCasesToRun);
     } else {
+      // C++, Java, C execute via judge
       judge0Runner.setLanguage(language);
-      return await judge0Runner.run(code, problem.functionName, testCasesToRun);
+      return await judge0Runner.executeJudge({
+        code,
+        slug: problem.slug,
+        mode: "run",
+      });
     }
   };
 
@@ -198,7 +231,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     const sampleCases = problem.testCases.filter((tc) => !tc.isHidden);
 
     try {
-      const res = await runWithLanguage(sampleCases);
+      const res = await runWithLanguage(
+        sampleCases,
+        "run",
+        showCustomInput && customInputText.trim() ? customInputText : undefined
+      );
       setResults(res);
     } catch (e: any) {
       setResults({
@@ -219,7 +256,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
     setMobileTab("results");
 
     try {
-      const res = await runWithLanguage(problem.testCases);
+      const res = await runWithLanguage(problem.testCases, "submit");
       setResults(res);
 
       recordSubmission(
@@ -749,12 +786,25 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
           </div>
 
           {/* Action Execution Bar */}
-          <div className="border-t border-b border-surface-border bg-surface/90 px-4 py-2.5 flex items-center justify-between gap-3">
+          <div className="border-t border-b border-surface-border bg-surface/90 px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
             <span className="text-[11px] font-mono text-slate-500 dark:text-gray-400 hidden sm:inline">
-              Runtime: {currentLangMeta?.runtimeLabel || "Sandboxed Web Worker"}
+              Runtime: {currentLangMeta?.runtimeLabel.replace(/^Runtime:\s*/, "") || "Sandboxed Web Worker"}
             </span>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCustomInput((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-medium transition-colors border ${
+                  showCustomInput
+                    ? "bg-forge-cyan/15 text-forge-cyan border-forge-cyan/40"
+                    : "text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white border-surface-border hover:bg-surface-secondary"
+                }`}
+                title="Test with custom stdin"
+              >
+                <span>Custom Input</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleRunSampleTests}
@@ -766,7 +816,7 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
                 ) : (
                   <Play className="w-3.5 h-3.5 fill-current" />
                 )}
-                <span>Run Tests</span>
+                <span>{showCustomInput && customInputText.trim() ? "Run Custom" : "Run Tests"}</span>
               </button>
 
               <button
@@ -785,6 +835,29 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
             </div>
           </div>
 
+          {/* Optional Custom Input Drawer */}
+          {showCustomInput && (
+            <div className="p-3 bg-surface/90 border-b border-surface-border space-y-1.5 font-mono text-xs">
+              <div className="flex items-center justify-between text-slate-600 dark:text-gray-400 text-[11px]">
+                <span>Custom Standard Input (stdin):</span>
+                <button
+                  type="button"
+                  onClick={() => setCustomInputText("")}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+              <textarea
+                value={customInputText}
+                onChange={(e) => setCustomInputText(e.target.value)}
+                placeholder="Enter custom input tokens or lines..."
+                rows={3}
+                className="w-full p-2.5 rounded-lg bg-surface-secondary/70 border border-surface-border text-slate-900 dark:text-white focus:outline-none focus:border-forge-cyan font-mono text-xs resize-none"
+              />
+            </div>
+          )}
+
           {/* Test Results & Console Panel */}
           <div
             className={`flex-1 min-h-[220px] max-h-[340px] border-t border-surface-border ${
@@ -795,6 +868,11 @@ export function ProblemWorkspace({ slug }: ProblemWorkspaceProps) {
               response={results}
               isRunning={isRunning}
               sampleTestCases={problem.testCases.filter((tc) => !tc.isHidden)}
+              onGoToLine={(line, col) => editorRef.current?.goToLine(line, col)}
+              onExplainError={() => {
+                setLeftTab("hints");
+                setMobileTab("hints");
+              }}
             />
           </div>
         </div>
